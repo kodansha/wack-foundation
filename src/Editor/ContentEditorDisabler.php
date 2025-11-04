@@ -45,7 +45,7 @@ class ContentEditorDisabler
     /**
      * Get the list of post types for which the content editor should be disabled
      *
-     * Applies the 'content_editor_disabled_post_types' filter to allow customization.
+    * Applies the 'wack_content_editor_disabled_post_types' filter to allow customization.
      *
      * @return string[] Array of post type slugs (e.g., 'author', 'product')
      */

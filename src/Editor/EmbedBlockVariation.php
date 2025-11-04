@@ -56,7 +56,7 @@ class EmbedBlockVariation
     /**
      * Get the list of enabled embed block variations
      *
-     * Applies the 'embed_block_enabled_variations' filter to allow customization.
+    * Applies the 'wack_embed_block_enabled_variations' filter to allow customization.
      *
      * Note: Include 'url' in this array if you want to allow the generic URL
      * embed block. The 'url' variation is handled differently from other variations

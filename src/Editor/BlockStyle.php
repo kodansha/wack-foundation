@@ -23,8 +23,23 @@ use WP_Block_Type_Registry;
  * in the block editor. The JavaScript uses wp.blocks.unregisterBlockStyle()
  * to remove the specified non-default styles.
  *
- * You can inspect registered styles in the browser console:
- * `wp.blocks.getBlockTypes().filter(b => b.styles?.length > 0).map(b => ({block: b.name, styles: b.styles}))`
+ * Primary inspection (PHP):
+ * Retrieve all registered block styles via the block type registry:
+ *
+ * ```php
+ * $registry = \WP_Block_Type_Registry::get_instance();
+ * $styles = [];
+ * foreach ($registry->get_all_registered() as $block) {
+ *     if (!empty($block->styles)) {
+ *         $styles[$block->name] = $block->styles; // each item has ['name' => 'outline', 'label' => 'Outline', 'isDefault' => bool]
+ *     }
+ * }
+ * // $styles now maps block name => array of style meta arrays
+ * ```
+ *
+ * Secondary (browser console quick check):
+ * `wp.blocks.getBlockTypes().filter(b => b.styles?.length).map(b => ({block: b.name, styles: b.styles}))`
+ * Prefer the PHP form for automation and test assertions.
  *
  * Example usage:
  * <code>
@@ -54,7 +69,7 @@ class BlockStyle
     /**
      * Get the list of enabled block styles
      *
-     * Applies the 'block_style_enabled_styles' filter to allow customization.
+    * Applies the 'wack_block_style_enabled_styles' filter to allow customization.
      *
      * Format: 'blockName:styleName' (e.g., 'core/button:outline', 'core/image:rounded')
      *

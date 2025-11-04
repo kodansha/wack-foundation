@@ -9,14 +9,29 @@ use WP_Block_Editor_Context;
  *
  * This class provides functionality for controlling which Gutenberg blocks
  * are available in the WordPress block editor. It defines a set of default
- * core blocks and uses the 'allowed_block_types' filter to allow customization
+ * core blocks and uses the WordPress core 'allowed_block_types_all' filter internally and
+ * a custom 'wack_block_type_enabled_types' filter to allow customization
  * of the allowed blocks for specific post types or contexts.
  *
  * To find the list of all the core blocks that can be filtered, see:
  * https://developer.wordpress.org/block-editor/reference-guides/core-blocks/
  *
- * You can get the list of actually registered blocks by running
- * `wp.blocks.getBlockTypes()` in the browser console on the block editor page.
+ * Primary inspection (PHP):
+ * You can retrieve all registered block types server-side (e.g. from a CLI command,
+ * mu-plugin diagnostics, or within a debugging endpoint) using:
+ *
+ * ```php
+ * $registry = \WP_Block_Type_Registry::get_instance();
+ * $all_blocks = $registry->get_all_registered(); // array of WP_Block_Type objects keyed by name
+ * foreach ($all_blocks as $name => $block) {
+ *     // $name example: 'core/paragraph'
+ *     // $block->title, $block->category, $block->supports, etc.
+ * }
+ * ```
+ *
+ * Secondary (browser console): `wp.blocks.getBlockTypes()`
+ * Use the browser console only for quick ad‑hoc inspection; prefer PHP for automation,
+ * reporting and CI assertions.
  *
  * Example usage:
  * <code>

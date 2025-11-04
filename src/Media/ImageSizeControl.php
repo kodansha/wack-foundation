@@ -6,7 +6,7 @@ namespace WackFoundation\Media;
  * Class for controlling WordPress image size generation
  *
  * Disables all WordPress default and auto-generated image sizes, and enables only
- * custom image sizes defined via the 'image_size_control_custom_sizes' filter.
+ * custom image sizes defined via the 'wack_image_size_control_custom_sizes' filter.
  * Also disables the big image auto-resize feature introduced in WordPress 5.3+ (always disabled).
  *
  * This class sets all default WordPress image size options to 0 via fixMediaOptions().
@@ -83,7 +83,7 @@ class ImageSizeControl
     /**
      * Get custom image size definitions
      *
-     * Applies the 'image_size_control_custom_sizes' filter to get custom size definitions.
+    * Applies the 'wack_image_size_control_custom_sizes' filter to get custom size definitions.
      * Returns an empty array by default (no custom sizes).
      *
      * @return array Associative array of custom size definitions

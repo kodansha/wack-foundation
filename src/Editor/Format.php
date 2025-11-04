@@ -50,7 +50,7 @@ class Format
     /**
      * Get the list of enabled format types
      *
-     * Applies the 'text_format_enabled_types' filter to allow customization.
+     * Applies the 'wack_text_format_enabled_types' filter to allow customization.
      *
      * @return string[] Array of format names (e.g., 'core/bold', 'core/italic')
      */
