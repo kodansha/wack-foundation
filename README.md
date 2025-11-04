@@ -200,15 +200,13 @@ Extend the list of allowed block types.
 ```php
 <?php
 // Add additional core blocks
-add_filter('wack_block_type_enabled_types', function($default_blocks) {
-    return array_merge($default_blocks, [
-        'core/table',
-        'core/video',
-        'core/gallery',
-        'core/quote',
-        'core/code',
-    ]);
-});
+add_filter('wack_block_type_enabled_types', fn($default_blocks) => array_merge($default_blocks, [
+    'core/table',
+    'core/video',
+    'core/gallery',
+    'core/quote',
+    'core/code',
+]));
 
 // Replace entirely (not recommended)
 add_filter('wack_block_type_enabled_types', fn() => [
@@ -255,14 +253,12 @@ Specify which block styles should be available.
 ```php
 <?php
 // Enable specific non-default styles
-add_filter('wack_block_style_enabled_styles', function($styles) {
-    return [
-        'core/button:outline',
-        'core/quote:fancy-quote',
-        'core/separator:wide',
-        'core/separator:dots',
-    ];
-});
+add_filter('wack_block_style_enabled_styles', fn($styles) => [
+    'core/button:outline',
+    'core/quote:fancy-quote',
+    'core/separator:wide',
+    'core/separator:dots',
+]);
 ```
 
 **Parameters:**
@@ -547,19 +543,16 @@ Provide a custom filename generation function.
 ```php
 <?php
 // Use timestamp with random string
-add_filter('media_filename_generator', function($default, $original, $ext) {
-    return date('Y-m-d-His') . '-' . wp_generate_password(8, false);
-}, 10, 3);
+add_filter('media_filename_generator', fn($default, $original, $ext) =>
+    date('Y-m-d-His') . '-' . wp_generate_password(8, false), 10, 3);
 
 // Use sanitized original filename (not recommended for security)
-add_filter('media_filename_generator', function($default, $original, $ext) {
-    return sanitize_file_name($original);
-}, 10, 3);
+add_filter('media_filename_generator', fn($default, $original, $ext) =>
+    sanitize_file_name($original), 10, 3);
 
 // Custom format with prefix
-add_filter('media_filename_generator', function($default, $original, $ext) {
-    return 'media-' . uniqid() . '-' . time();
-}, 10, 3);
+add_filter('media_filename_generator', fn($default, $original, $ext) =>
+    'media-' . uniqid() . '-' . time(), 10, 3);
 ```
 
 **Parameters:**

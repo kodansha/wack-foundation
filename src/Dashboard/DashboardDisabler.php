@@ -22,9 +22,8 @@ namespace WackFoundation\Dashboard;
  * new DashboardDisabler();
  *
  * // Customize redirect URL
- * add_filter('wack_dashboard_redirect_url', function() {
- *     return admin_url('edit.php?post_type=page');
- * });
+ * add_filter('wack_dashboard_redirect_url', fn() =>
+ *     admin_url('edit.php?post_type=page'));
  *
  * // Allow administrators to access dashboard
  * add_filter('wack_dashboard_allowed_capabilities', function($capabilities) {
@@ -154,9 +153,8 @@ class DashboardDisabler
          * Example usage:
          * <code>
          * <?php
-         * add_filter('wack_dashboard_redirect_url', function() {
-         *     return 'edit.php?post_type=page'; // Redirect to pages list
-         * });
+         * add_filter('wack_dashboard_redirect_url', fn() =>
+         *     'edit.php?post_type=page'); // Redirect to pages list
          * ?>
          * </code>
          *

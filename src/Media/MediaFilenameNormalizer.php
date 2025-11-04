@@ -27,10 +27,8 @@ use Random\RandomException;
  * new MediaFilenameNormalizer();
  *
  * // Use filter to customize filename generation
- * add_filter('wack_media_filename_generator', function($defaultUuid, $originalFilename, $extension) {
- *     // Use timestamp-based naming (ignoring default UUID)
- *     return date('Y-m-d-His') . '-' . wp_generate_password(8, false);
- * }, 10, 3);
+ * add_filter('wack_media_filename_generator', fn($defaultUuid, $originalFilename, $extension) =>
+ *     date('Y-m-d-His') . '-' . wp_generate_password(8, false), 10, 3);
  *
  * // Or sanitize and keep original filename with prefix
  * add_filter('wack_media_filename_generator', function($defaultUuid, $originalFilename, $extension) {
