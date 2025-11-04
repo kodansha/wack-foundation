@@ -1,6 +1,36 @@
 # WACK Foundation Theme
 
-A modern parent theme for headless WordPress, especially optimized for the WACK Stack architecture.
+- [Overview](#overview)
+- [Purpose \& Design Philosophy](#purpose--design-philosophy)
+  - [Key Principles](#key-principles)
+- [Installation](#installation)
+  - [Using as a Parent Theme](#using-as-a-parent-theme)
+- [Features](#features)
+  - [Appearance](#appearance)
+    - [Admin Favicon](#admin-favicon)
+  - [Comment](#comment)
+    - [Comment Disabler](#comment-disabler)
+  - [Dashboard](#dashboard)
+    - [Dashboard Disabler](#dashboard-disabler)
+  - [Editor](#editor)
+    - [Block Type Controller](#block-type-controller)
+    - [Block Style Manager](#block-style-manager)
+    - [Format Controller](#format-controller)
+    - [Embed Block Variation Manager](#embed-block-variation-manager)
+    - [Content Editor Disabler](#content-editor-disabler)
+    - [Quick Edit Disabler](#quick-edit-disabler)
+  - [Media](#media)
+    - [Image Size Control](#image-size-control)
+    - [Media Filename Normalizer](#media-filename-normalizer)
+  - [Security](#security)
+    - [REST API Controller](#rest-api-controller)
+    - [XML-RPC Disabler](#xml-rpc-disabler)
+  - [PostType \& Taxonomy Base Classes](#posttype--taxonomy-base-classes)
+    - [BasePostType](#baseposttype)
+    - [BaseTaxonomy](#basetaxonomy)
+  - [Validation](#validation)
+    - [BaseValidation](#basevalidation)
+- [Killer Pads Users](#killer-pads-users)
 
 ## Overview
 
