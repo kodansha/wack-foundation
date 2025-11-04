@@ -1,0 +1,8 @@
+/**
+ * Completely hides the post content area of the Gutenberg block editor from the screen.
+ *
+ * For certain post types, the main post content area is unnecessary, so this CSS hides it.
+ */
+.wp-block-post-content {
+  display: none !important;
+}

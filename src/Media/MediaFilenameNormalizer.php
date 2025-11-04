@@ -1,0 +1,171 @@
+<?php
+
+namespace WackFoundation\Media;
+
+use Random\RandomException;
+
+/**
+ * Class for normalizing uploaded media filenames
+ *
+ * By default, normalizes all uploaded media files to UUIDv7-based names to ensure
+ * uniqueness and prevent filename conflicts. This also helps with security by
+ * obscuring original filenames.
+ *
+ * To customize filename normalization logic, use the 'wack_media_filename_generator' filter.
+ * The filter receives the original filename (without extension) and the file extension
+ * as parameters, and should return the normalized filename (without extension).
+ *
+ * Example usage:
+ * <code>
+ * <?php
+ * // Instantiate to enable the feature
+ * new MediaFilenameNormalizer();
+ *
+ * // Use filter to customize filename generation
+ * add_filter('wack_media_filename_generator', function($originalFilename, $extension) {
+ *     // Use timestamp-based naming
+ *     return date('Y-m-d-His') . '-' . wp_generate_password(8, false);
+ * }, 10, 2);
+ *
+ * // Or sanitize and keep original filename with prefix
+ * add_filter('wack_media_filename_generator', function($originalFilename, $extension) {
+ *     $sanitized = sanitize_file_name($originalFilename);
+ *     return 'upload-' . date('Ymd') . '-' . $sanitized;
+ * }, 10, 2);
+ * ?>
+ * </code>
+ */
+class MediaFilenameNormalizer
+{
+    /**
+     * Constructor
+     *
+     * Automatically registers the filter hook for normalizing upload filenames.
+     */
+    public function __construct()
+    {
+        add_filter('wp_handle_upload_prefilter', [$this, 'normalizeFilename']);
+    }
+
+    /**
+     * Filter callback for wp_handle_upload_prefilter
+     *
+     * This method is called before a file is uploaded. It normalizes the file
+     * using the generateFilename() method.
+     *
+     * @param array $file An array of data for the uploaded file
+     *
+     * @return array Modified file data with normalized filename
+     * @throws RandomException
+     */
+    public function normalizeFilename(array $file): array
+    {
+        // Get original filename and extract extension
+        $originalFilename = $file['name'];
+        $pathInfo = pathinfo($originalFilename);
+        $extension = isset($pathInfo['extension']) ? strtolower($pathInfo['extension']) : '';
+        $filenameWithoutExt = $pathInfo['filename'] ?? '';
+
+        // Generate new filename
+        $newFilename = $this->generateFilename($filenameWithoutExt, $extension);
+
+        // Append extension if present
+        if (!empty($extension)) {
+            $newFilename .= '.' . $extension;
+        }
+
+        // Update the filename in the file array
+        $file['name'] = $newFilename;
+
+        return $file;
+    }
+
+    /**
+     * Generate a custom filename for the uploaded file
+     *
+     * Applies the 'media_filename_generator' filter to allow customization.
+     * By default, generates a UUIDv7-based filename for uniqueness.
+     *
+     * @param string $originalFilename Original filename without extension
+     * @param string $extension        File extension (lowercase, without dot)
+     *
+     * @return string Normalized filename without extension
+     * @throws RandomException
+     */
+    protected function generateFilename(string $originalFilename, string $extension): string
+    {
+        /**
+         * Filter the generated filename for uploaded media
+         *
+         * @param string $filename The default filename (UUIDv7).
+         * @param string $originalFilename Original filename without extension.
+         * @param string $extension File extension (lowercase, without dot).
+         */
+        return apply_filters(
+            'wack_media_filename_generator',
+            $this->generateUuidV7(),
+            $originalFilename,
+            $extension,
+        );
+    }
+
+    /**
+     * Generate a UUIDv7 string compliant with RFC 9562
+     *
+     * UUIDv7 features a time-ordered value field derived from the widely
+     * implemented and well-known Unix Epoch timestamp source, making it
+     * sortable by creation time.
+     *
+     * Format (RFC 9562 Section 5.7):
+     * - unix_ts_ms (48 bits): Unix timestamp in milliseconds
+     * - ver (4 bits): UUID version = 0111 (7)
+     * - rand_a (12 bits): Random data
+     * - var (2 bits): UUID variant = 10
+     * - rand_b (62 bits): Random data
+     *
+     * @return string UUIDv7 string in 8-4-4-4-12 format (e.g., '018e1234-5678-7abc-8def-0123456789ab')
+     * @throws RandomException
+     */
+    protected function generateUuidV7(): string
+    {
+        // Get current timestamp in milliseconds (48 bits)
+        $timestamp = (int) (microtime(true) * 1000);
+
+        // Generate random bytes for rand_a (12 bits) and rand_b (62 bits)
+        // Total: 74 bits = 10 bytes (rounded up)
+        $randomBytes = random_bytes(10);
+
+        // Build UUID v7 structure
+        // unix_ts_ms: 48 bits (6 bytes)
+        $uuid = pack(
+            'n*',
+            ($timestamp >> 32) & 0xFFFF,        // Bits 47-32
+            ($timestamp >> 16) & 0xFFFF,        // Bits 31-16
+            $timestamp & 0xFFFF,                  // Bits 15-0
+        );
+
+        // ver + rand_a: 16 bits (2 bytes)
+        // Version 7 (0111) in bits 15-12, rand_a in bits 11-0
+        $verRandA = (ord($randomBytes[0]) << 8) | ord($randomBytes[1]);
+        $verRandA = ($verRandA & 0x0FFF) | 0x7000; // Set version to 7
+        $uuid .= pack('n', $verRandA);
+
+        // var + rand_b: 64 bits (8 bytes)
+        // Variant 10 in bits 63-62, rand_b in bits 61-0
+        $varRandB = ord($randomBytes[2]);
+        $varRandB = ($varRandB & 0x3F) | 0x80; // Set variant to 10
+        $uuid .= chr($varRandB);
+        $uuid .= substr($randomBytes, 3, 7);
+
+        // Format as 8-4-4-4-12 hexadecimal string
+        $hex = bin2hex($uuid);
+        return sprintf(
+            '%s-%s-%s-%s-%s',
+            substr($hex, 0, 8),
+            substr($hex, 8, 4),
+            substr($hex, 12, 4),
+            substr($hex, 16, 4),
+            substr($hex, 20, 12),
+        );
+    }
+}

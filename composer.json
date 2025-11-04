@@ -1,0 +1,40 @@
+{
+  "name": "kodansha/wack-foundation",
+  "description": "The base (parent) theme for WACK stack based WordPress projects.",
+  "keywords": [
+    "wordpress",
+    "theme"
+  ],
+  "type": "wordpress-theme",
+  "authors": [
+    {
+      "name": "KODANSHA Ltd.",
+      "homepage": "https://github.com/kodansha"
+    },
+    {
+      "name": "Hirofumi Wakasugi",
+      "homepage": "https://github.com/5t111111"
+    }
+  ],
+  "homepage": "https://github.com/kodansha/wack-foundation",
+  "license": "GPL-3.0-or-later",
+  "require": {
+    "php": ">=8.2"
+  },
+  "require-dev": {
+    "laravel/pint": "^1.18"
+  },
+  "autoload": {
+    "psr-4": {
+      "WackFoundation\\": "src"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "optimize-autoloader": true
+  },
+  "scripts": {
+    "lint": "pint --test",
+    "lint:fix": "pint"
+  }
+}

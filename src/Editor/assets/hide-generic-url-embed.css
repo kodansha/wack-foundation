@@ -1,0 +1,22 @@
+/**
+ * Hide the generic URL embed block in Gutenberg
+ *
+ * This CSS hides the generic embed block menu item while keeping specific service
+ * embed blocks (YouTube, Twitter, etc.) visible.
+ */
+
+/**
+ * Hide the generic embed block in the block list
+ */
+.block-editor-block-types-list__list-item:has(
+  > .editor-block-list-item-embed:not([class*="editor-block-list-item-embed/"])
+) {
+  display: none !important;
+}
+
+/**
+ * Hide the generic embed block when inserting with slash (/) key
+ */
+button[id^="components-autocomplete-item-"][id$="-core/embed"] {
+  display: none !important;
+}
