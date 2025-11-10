@@ -14,6 +14,7 @@ namespace WackFoundation\Taxonomy;
  *
  * Properties with non-core defaults:
  * - $show_in_rest: true (WordPress core: false)
+ * - $hierarchical: true (WordPress core: false)
  *
  * Reference: https://developer.wordpress.org/reference/functions/register_taxonomy/
  *
@@ -35,7 +36,6 @@ namespace WackFoundation\Taxonomy;
  *     public function __construct()
  *     {
  *         $this->extra_args = [
- *             'hierarchical' => true,
  *             'rewrite' => ['slug' => 'genres'],
  *             'show_in_nav_menus' => true,
  *         ];
@@ -52,13 +52,16 @@ abstract class BaseTaxonomy
     /** @var bool Whether to show in REST API (WordPress core default: false) */
     protected bool $show_in_rest = true;
 
+    /** @var bool Whether the taxonomy is hierarchical (WordPress core default: false) */
+    protected bool $hierarchical = true;
+
     /**
      * Additional arguments to pass to register_taxonomy
      *
      * This array can contain any WordPress taxonomy registration arguments
      * that match WordPress core defaults or require custom values.
      *
-     * Common arguments include: description, public, publicly_queryable, hierarchical,
+     * Common arguments include: description, public, publicly_queryable,
      * show_ui, show_in_menu, show_in_nav_menus, show_in_quick_edit, show_admin_column,
      * meta_box_cb, meta_box_sanitize_cb, capabilities, rewrite, query_var, update_count_callback,
      * show_tagcloud, show_in_graphql, and version-specific arguments.
@@ -121,6 +124,7 @@ abstract class BaseTaxonomy
     {
         $base = [
             'labels' => $this->createLabels(),
+            'hierarchical' => $this->hierarchical,
             'show_in_rest' => $this->show_in_rest,
         ];
 
@@ -146,14 +150,11 @@ abstract class BaseTaxonomy
     {
         $label = static::taxonomyLabel();
 
-        // Determine if hierarchical from extra_args
-        $is_hierarchical = $this->extra_args['hierarchical'] ?? false;
-
         // Select templates based on locale and hierarchy
         $locale = get_locale();
         $is_japanese = in_array($locale, ['ja', 'ja_JP'], true) || str_starts_with($locale, 'ja_');
 
-        if ($is_hierarchical) {
+        if ($this->hierarchical) {
             $templates = $is_japanese
                 ? CategoryLabelTemplates::TEMPLATES_JA
                 : CategoryLabelTemplates::TEMPLATES_EN;
@@ -164,7 +165,7 @@ abstract class BaseTaxonomy
         }
 
         // Allow customization via filter
-        $templates = apply_filters('wack_taxonomy_label_templates', $templates, static::taxonomyKey(), $is_hierarchical);
+        $templates = apply_filters('wack_taxonomy_label_templates', $templates, static::taxonomyKey(), $this->hierarchical);
 
         $labels = [];
 
