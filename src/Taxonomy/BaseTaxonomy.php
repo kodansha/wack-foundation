@@ -7,7 +7,13 @@ namespace WackFoundation\Taxonomy;
  *
  * A wrapper class to handle register_taxonomy API arguments in a type-safe manner.
  * Child classes define the minimum requirements such as taxonomy key and label,
- * and can adjust hierarchical, visibility, and extra_args as needed.
+ * and can configure all WordPress taxonomy registration options.
+ *
+ * This class only defines properties whose recommended defaults differ from WordPress core.
+ * Other WordPress arguments should be set via the $extra_args array.
+ *
+ * Properties with non-core defaults:
+ * - $show_in_rest: true (WordPress core: false)
  *
  * Reference: https://developer.wordpress.org/reference/functions/register_taxonomy/
  *
@@ -28,19 +34,10 @@ namespace WackFoundation\Taxonomy;
  *
  *     public function __construct()
  *     {
- *         $this->hierarchical = true;
- *         $this->rewrite = ['slug' => 'genres'];
- *         $this->extra_args['show_in_nav_menus'] = true;
- *     }
- *
- *     protected function createLabels(): array
- *     {
- *         $label = static::taxonomyLabel();
- *         return [
- *             'name' => $label,
- *             'singular_name' => $label,
- *             'add_new_item' => sprintf(__('Add New %s', 'my-theme'), $label),
- *             // ... other labels
+ *         $this->extra_args = [
+ *             'hierarchical' => true,
+ *             'rewrite' => ['slug' => 'genres'],
+ *             'show_in_nav_menus' => true,
  *         ];
  *     }
  * }
@@ -52,19 +49,22 @@ namespace WackFoundation\Taxonomy;
  */
 abstract class BaseTaxonomy
 {
-    /** @var bool Whether the taxonomy is hierarchical (like categories) or flat (like tags) */
-    protected bool $hierarchical = false;
-
-    /** @var bool Whether the taxonomy is publicly accessible */
-    protected bool $public = true;
-
-    /** @var bool Whether to show in REST API */
+    /** @var bool Whether to show in REST API (WordPress core default: false) */
     protected bool $show_in_rest = true;
 
-    /** @var bool|array Rewrite rules */
-    protected bool|array $rewrite = true;
-
-    /** @var array Additional arguments to pass to register_taxonomy */
+    /**
+     * Additional arguments to pass to register_taxonomy
+     *
+     * This array can contain any WordPress taxonomy registration arguments
+     * that match WordPress core defaults or require custom values.
+     *
+     * Common arguments include: description, public, publicly_queryable, hierarchical,
+     * show_ui, show_in_menu, show_in_nav_menus, show_in_quick_edit, show_admin_column,
+     * meta_box_cb, meta_box_sanitize_cb, capabilities, rewrite, query_var, update_count_callback,
+     * show_tagcloud, show_in_graphql, and version-specific arguments.
+     *
+     * @var array
+     */
     protected array $extra_args = [];
 
     /**
@@ -114,7 +114,6 @@ abstract class BaseTaxonomy
      * Build the arguments array to pass to register_taxonomy
      *
      * Combines base configuration with custom settings from child classes.
-     * Child classes can adjust hierarchical, rewrite, and extra_args in the constructor.
      *
      * @return array Arguments array for register_taxonomy()
      */
@@ -122,39 +121,24 @@ abstract class BaseTaxonomy
     {
         $base = [
             'labels' => $this->createLabels(),
-            'hierarchical' => $this->hierarchical,
-            'public' => $this->public,
             'show_in_rest' => $this->show_in_rest,
-            'rewrite' => $this->rewrite,
         ];
 
-        // Merge/override values specified in extra_args by the user
+        // Merge with extra_args, allowing override
         return array_merge($base, $this->extra_args);
     }
 
     /**
      * Generate various labels
      *
-     * Override this method in child classes to use the appropriate text domain.
-     * The text domain must be specified as a string literal so that translation tools
-     * can recognize the strings.
+     * Automatically selects label templates based on site locale and taxonomy type:
+     * - Hierarchical taxonomies use category-style templates
+     * - Non-hierarchical taxonomies use tag-style templates
+     * - Japanese locale (ja, ja_JP): Uses CategoryLabelTemplates/TagLabelTemplates::TEMPLATES_JA
+     * - Other locales: Uses CategoryLabelTemplates/TagLabelTemplates::TEMPLATES_EN
      *
-     * Example:
-     * <code>
-     * <?php
-     * protected function createLabels(): array
-     * {
-     *     $label = static::taxonomyLabel();
-     *     return [
-     *         'name' => $label,
-     *         'singular_name' => $label,
-     *         'all_items' => sprintf(__('All %s', 'your-textdomain'), $label),
-     *         'edit_item' => sprintf(__('Edit %s', 'your-textdomain'), $label),
-     *         // ... other labels
-     *     ];
-     * }
-     * ?>
-     * </code>
+     * Templates can be overridden via 'wack_taxonomy_label_templates' filter.
+     * Templates use sprintf-style placeholders that are replaced with the taxonomy label.
      *
      * @return array Array of labels
      */
@@ -162,12 +146,58 @@ abstract class BaseTaxonomy
     {
         $label = static::taxonomyLabel();
 
-        // Default implementation (no translation)
-        // It is recommended to override in child classes with a specified text domain
-        return [
-            'name' => $label,
-            'singular_name' => $label,
-            'menu_name' => $label,
-        ];
+        // Determine if hierarchical from extra_args
+        $is_hierarchical = $this->extra_args['hierarchical'] ?? false;
+
+        // Select templates based on locale and hierarchy
+        $locale = get_locale();
+        $is_japanese = in_array($locale, ['ja', 'ja_JP'], true) || str_starts_with($locale, 'ja_');
+
+        if ($is_hierarchical) {
+            $templates = $is_japanese
+                ? CategoryLabelTemplates::TEMPLATES_JA
+                : CategoryLabelTemplates::TEMPLATES_EN;
+        } else {
+            $templates = $is_japanese
+                ? TagLabelTemplates::TEMPLATES_JA
+                : TagLabelTemplates::TEMPLATES_EN;
+        }
+
+        // Allow customization via filter
+        $templates = apply_filters('wack_taxonomy_label_templates', $templates, static::taxonomyKey(), $is_hierarchical);
+
+        $labels = [];
+
+        // For English, some labels use lowercase for natural language flow
+        // e.g., "No categories found." instead of "No Categories found."
+        // This matches WordPress core behavior for consistent UX
+        if (! $is_japanese) {
+            $label_lower = mb_strtolower($label);
+
+            foreach ($templates as $key => $template) {
+                if ($template === null) {
+                    continue;
+                }
+
+                $use_lowercase = in_array($key, [
+                    'not_found',
+                    'separate_items_with_commas',
+                    'add_or_remove_items',
+                    'choose_from_most_used',
+                ], true);
+
+                $labels[$key] = sprintf($template, $use_lowercase ? $label_lower : $label);
+            }
+        } else {
+            // For Japanese, simply apply the label to all templates
+            foreach ($templates as $key => $template) {
+                if ($template === null) {
+                    continue;
+                }
+                $labels[$key] = sprintf($template, $label);
+            }
+        }
+
+        return $labels;
     }
 }
