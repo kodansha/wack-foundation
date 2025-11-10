@@ -744,15 +744,17 @@ Labels are automatically generated based on the site's locale:
 
 The post type label from `postTypeLabel()` is automatically inserted into the templates.
 
-**Customizing Labels (Optional):**
-If you need to customize specific labels across all post types, use the filter:
+**Customizing Labels:**
+Override the `createLabels()` method in child classes. Use `buildLabelsFromTemplates()` for partial customization:
 ```php
 <?php
-add_filter('wack_post_type_label_templates', function($templates, $post_type) {
-    // Customize specific labels
-    $templates['add_new'] = 'Create New';
-    return $templates;
-}, 10, 2);
+protected function createLabels(): array
+{
+    $labels = $this->buildLabelsFromTemplates(static::postTypeLabel());
+    $labels['add_new'] = 'Create New'; // Override specific label
+    $labels['edit_item'] = 'Modify';
+    return $labels;
+}
 ```
 
 **Required Methods:**
@@ -855,14 +857,17 @@ Labels are automatically generated based on the site's locale and taxonomy type:
 
 The taxonomy label from `taxonomyLabel()` is automatically inserted into the templates.
 
-**Customizing Labels (Optional):**
+**Customizing Labels:**
+Override the `createLabels()` method in child classes. Use `buildLabelsFromTemplates()` for partial customization:
 ```php
 <?php
-add_filter('wack_taxonomy_label_templates', function($templates, $taxonomy_key, $is_hierarchical) {
-    // Customize specific labels
-    $templates['add_new_item'] = 'Create New';
-    return $templates;
-}, 10, 3);
+protected function createLabels(): array
+{
+    $labels = $this->buildLabelsFromTemplates(static::taxonomyLabel());
+    $labels['add_new_item'] = 'Create New'; // Override specific label
+    $labels['search_items'] = 'Find';
+    return $labels;
+}
 ```
 
 **Required Methods:**

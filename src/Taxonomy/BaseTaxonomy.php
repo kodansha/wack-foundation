@@ -136,21 +136,47 @@ abstract class BaseTaxonomy
     /**
      * Generate various labels
      *
-     * Automatically selects label templates based on site locale and taxonomy type:
-     * - Hierarchical taxonomies use category-style templates
-     * - Non-hierarchical taxonomies use tag-style templates
-     * - Japanese locale (ja, ja_JP): Uses CategoryLabelTemplates/TagLabelTemplates::TEMPLATES_JA
-     * - Other locales: Uses CategoryLabelTemplates/TagLabelTemplates::TEMPLATES_EN
-     *
-     * Templates can be overridden via 'wack_taxonomy_label_templates' filter.
-     * Templates use sprintf-style placeholders that are replaced with the taxonomy label.
+     * Automatically generates labels using locale and hierarchy-based templates.
+     * Override this method in child classes for complete customization.
+     * Use buildLabelsFromTemplates() for partial customization.
      *
      * @return array Array of labels
      */
     protected function createLabels(): array
     {
-        $label = static::taxonomyLabel();
+        return $this->buildLabelsFromTemplates(static::taxonomyLabel());
+    }
 
+    /**
+     * Build labels from templates
+     *
+     * Helper method to construct labels from templates based on site locale and taxonomy type.
+     * Useful when overriding createLabels() but still wanting to use templates.
+     *
+     * - Hierarchical taxonomies use category-style templates
+     * - Non-hierarchical taxonomies use tag-style templates
+     * - Japanese locale (ja, ja_JP): Uses CategoryLabelTemplates/TagLabelTemplates::TEMPLATES_JA
+     * - Other locales: Uses CategoryLabelTemplates/TagLabelTemplates::TEMPLATES_EN
+     *
+     * Templates use sprintf-style placeholders replaced with the taxonomy label.
+     *
+     * Example:
+     * <code>
+     * <?php
+     * protected function createLabels(): array
+     * {
+     *     $labels = $this->buildLabelsFromTemplates(static::taxonomyLabel());
+     *     $labels['add_new_item'] = 'Create New'; // Override specific label
+     *     return $labels;
+     * }
+     * ?>
+     * </code>
+     *
+     * @param string $label The taxonomy label to use in templates
+     * @return array Array of labels
+     */
+    protected function buildLabelsFromTemplates(string $label): array
+    {
         // Select templates based on locale and hierarchy
         $locale = get_locale();
         $is_japanese = in_array($locale, ['ja', 'ja_JP'], true) || str_starts_with($locale, 'ja_');
@@ -164,9 +190,6 @@ abstract class BaseTaxonomy
                 ? TagLabelTemplates::TEMPLATES_JA
                 : TagLabelTemplates::TEMPLATES_EN;
         }
-
-        // Allow customization via filter
-        $templates = apply_filters('wack_taxonomy_label_templates', $templates, static::taxonomyKey(), $this->hierarchical);
 
         $labels = [];
 

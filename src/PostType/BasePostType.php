@@ -160,28 +160,51 @@ abstract class BasePostType
     /**
      * Generate various labels
      *
-     * Automatically selects label templates based on site locale:
-     * - Japanese locale (ja, ja_JP): Uses PostTypeLabelTemplates::TEMPLATES_JA
-     * - Other locales: Uses PostTypeLabelTemplates::TEMPLATES_EN
-     *
-     * Templates can be overridden via 'wack_post_type_label_templates' filter.
-     * Templates use sprintf-style placeholders that are replaced with the post type label.
+     * Automatically generates labels using locale-based templates.
+     * Override this method in child classes for complete customization.
+     * Use buildLabelsFromTemplates() for partial customization.
      *
      * @return array Array of labels
      */
     protected function createLabels(): array
     {
-        $label = static::postTypeLabel();
+        return $this->buildLabelsFromTemplates(static::postTypeLabel());
+    }
 
+    /**
+     * Build labels from templates
+     *
+     * Helper method to construct labels from templates based on site locale.
+     * Useful when overriding createLabels() but still wanting to use templates.
+     *
+     * - Japanese locale (ja, ja_JP): Uses PostTypeLabelTemplates::TEMPLATES_JA
+     * - Other locales: Uses PostTypeLabelTemplates::TEMPLATES_EN
+     *
+     * Templates use sprintf-style placeholders replaced with the post type label.
+     *
+     * Example:
+     * <code>
+     * <?php
+     * protected function createLabels(): array
+     * {
+     *     $labels = $this->buildLabelsFromTemplates(static::postTypeLabel());
+     *     $labels['add_new'] = 'Create New'; // Override specific label
+     *     return $labels;
+     * }
+     * ?>
+     * </code>
+     *
+     * @param string $label The post type label to use in templates
+     * @return array Array of labels
+     */
+    protected function buildLabelsFromTemplates(string $label): array
+    {
         // Select templates based on locale
         $locale = get_locale();
         $is_japanese = in_array($locale, ['ja', 'ja_JP'], true) || str_starts_with($locale, 'ja_');
         $templates = $is_japanese
             ? PostTypeLabelTemplates::TEMPLATES_JA
             : PostTypeLabelTemplates::TEMPLATES_EN;
-
-        // Allow customization via filter
-        $templates = apply_filters('wack_post_type_label_templates', $templates, static::postTypeName());
 
         $labels = [];
 
