@@ -698,52 +698,75 @@ Abstract base class for registering custom post types with sensible defaults for
 - Headless-friendly defaults (no frontend templates)
 - Automatic REST API exposure
 - Support for Gutenberg editor
-- Flexible label generation
+- Automatic label generation with locale support (English/Japanese)
 
-**Usage:**
+**Basic Usage:**
 ```php
 <?php
 namespace MyTheme\PostTypes;
 
 use WackFoundation\PostType\BasePostType;
 
-class Product extends BasePostType
+class AuthorPostType extends BasePostType
 {
-    protected string $post_type = 'product';
-    protected string $singular_name = 'Product';
-    protected string $plural_name = 'Products';
-    protected string $menu_icon = 'dashicons-products';
+    public static function postTypeName(): string
+    {
+        return 'author';
+    }
 
-    protected array $supports = [
-        'title',
-        'editor',
-        'thumbnail',
-        'custom-fields',
-    ];
+    public static function postTypeLabel(): string
+    {
+        return '著者'; // Or 'Author' for English
+    }
 
-    protected array $taxonomies = [
-        'product_category',
-        'product_tag',
-    ];
+    public function __construct()
+    {
+        $this->menu_position = 21;
+        $this->menu_icon = 'dashicons-admin-users';
+        $this->supports = ['title', 'editor', 'thumbnail'];
+        $this->has_archive = true;
+    }
 }
 
 // Register the post type
-new Product();
+new AuthorPostType()->register();
 ```
 
-**Override methods:**
-- `getArgs()`: Customize post type registration arguments
-- `getLabels()`: Customize admin labels
-- `getSupports()`: Define supported features
-- `getTaxonomies()`: Associate taxonomies
+**Label Generation:**
+Labels are automatically generated based on the site's locale:
+- Japanese locale (`ja*`): Uses Japanese label templates (e.g., "新規追加", "編集")
+- Other locales: Uses English label templates (e.g., "Add New", "Edit")
 
-**Default configuration:**
-- `public`: `true`
-- `show_ui`: `true`
-- `show_in_rest`: `true` (REST API enabled)
-- `has_archive`: `false` (headless - no frontend)
-- `rewrite`: `false` (headless - no permalinks)
-- `supports`: `['title', 'editor']`
+The post type label from `postTypeLabel()` is automatically inserted into the templates.
+
+**Customizing Labels (Optional):**
+If you need to customize specific labels across all post types, use the filter:
+```php
+<?php
+add_filter('wack_post_type_label_templates', function($templates, $post_type) {
+    // Customize specific labels
+    $templates['add_new'] = 'Create New';
+    return $templates;
+}, 10, 2);
+```
+
+**Required Methods:**
+- `postTypeName()`: Return the post type slug (e.g., 'product', 'author')
+- `postTypeLabel()`: Return the singular label (e.g., 'Product', '商品')
+
+**Customizable Properties:**
+- `$menu_icon`: Dashicon class (default: `''`)
+- `$menu_position`: Admin menu position (default: `20`)
+- `$supports`: Supported features array (default: `['title', 'editor']`)
+- `$public`: Public visibility (default: `true`)
+- `$show_ui`: Show admin UI (default: `true`)
+- `$publicly_queryable`: Publicly queryable (default: `true`)
+- `$show_in_rest`: REST API enabled (default: `true`)
+- `$has_archive`: Enable archive (default: `false`)
+- `$rewrite`: Rewrite rules (default: `false`)
+- `$capability_type`: Capability type (default: `'post'`)
+- `$taxonomies`: Associated taxonomies (default: `[]`)
+- `$extra_args`: Additional `register_post_type()` arguments (default: `[]`)
 
 ---
 

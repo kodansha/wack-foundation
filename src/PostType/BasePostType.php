@@ -113,20 +113,6 @@ abstract class BasePostType
     abstract public static function postTypeLabel(): string;
 
     /**
-     * Return the label displayed in the menu
-     *
-     * By default, returns the same value as postTypeLabel().
-     * Override this method only if you need to use a different label
-     * (e.g., when the label is too long for the dashboard sidebar menu).
-     *
-     * @return string Menu label for the post type
-     */
-    public static function postTypeMenuLabel(): string
-    {
-        return static::postTypeLabel();
-    }
-
-    /**
      * Constructor
      *
      * Initialize the post type properties such as menu_position, menu_icon,
@@ -182,38 +168,55 @@ abstract class BasePostType
     /**
      * Generate various labels
      *
-     * Override this method in child classes to use the appropriate text domain.
-     * The text domain must be specified as a string literal so that translation tools
-     * can recognize the strings.
+     * Automatically selects label templates based on site locale:
+     * - Japanese locale (ja, ja_JP): Uses PostTypeLabelTemplates::TEMPLATES_JA
+     * - Other locales: Uses PostTypeLabelTemplates::TEMPLATES_EN
      *
-     * Example:
-     * <code>
-     * <?php
-     * protected function createLabels(): array
-     * {
-     *     $label = static::postTypeLabel();
-     *     return [
-     *         'name' => $label,
-     *         'menu_name' => static::postTypeMenuLabel(),
-     *         'add_new' => __('Add New', 'your-textdomain'),
-     *         'add_new_item' => sprintf(__('Add New %s', 'your-textdomain'), $label),
-     *         // ... other labels
-     *     ];
-     * }
-     * ?>
-     * </code>
+     * Templates can be overridden via 'wack_post_type_label_templates' filter.
+     * Templates use sprintf-style placeholders that are replaced with the post type label.
      *
      * @return array Array of labels
      */
     protected function createLabels(): array
     {
-        $post_type_label = static::postTypeLabel();
+        $label = static::postTypeLabel();
 
-        // Default implementation (no translation)
-        // It is recommended to override in child classes with a specified text domain
-        return [
-            'name' => $post_type_label,
-            'menu_name' => static::postTypeMenuLabel(),
-        ];
+        // Select templates based on locale
+        $locale = get_locale();
+        $is_japanese = in_array($locale, ['ja', 'ja_JP'], true) || str_starts_with($locale, 'ja_');
+        $templates = $is_japanese
+            ? PostTypeLabelTemplates::TEMPLATES_JA
+            : PostTypeLabelTemplates::TEMPLATES_EN;
+
+        // Allow customization via filter
+        $templates = apply_filters('wack_post_type_label_templates', $templates, static::postTypeName());
+
+        $labels = [];
+
+        // For English, some labels use lowercase for natural language flow
+        // e.g., "No posts found." instead of "No Posts found."
+        // This matches WordPress core behavior for consistent UX
+        if (! $is_japanese) {
+            $label_lower = mb_strtolower($label);
+
+            foreach ($templates as $key => $template) {
+                $use_lowercase = in_array($key, [
+                    'not_found',
+                    'not_found_in_trash',
+                    'insert_into_item',
+                    'uploaded_to_this_item',
+                    'filter_items_list',
+                ], true);
+
+                $labels[$key] = sprintf($template, $use_lowercase ? $label_lower : $label);
+            }
+        } else {
+            // For Japanese, simply apply the label to all templates
+            foreach ($templates as $key => $template) {
+                $labels[$key] = sprintf($template, $label);
+            }
+        }
+
+        return $labels;
     }
 }
