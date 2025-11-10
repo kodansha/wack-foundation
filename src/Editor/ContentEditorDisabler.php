@@ -11,6 +11,11 @@ namespace WackFoundation\Editor;
  * By default, no post types have their content editor disabled. Use the
  * 'wack_content_editor_disabled_post_types' filter to specify target post types.
  *
+ * Note: While you can remove 'editor' from a post type's 'supports' array to
+ * disable the content editor, doing so prevents the Gutenberg UI from loading.
+ * This class provides a way to hide the content editor while maintaining the
+ * Gutenberg interface, ensuring a consistent block editor UI across all post types.
+ *
  * Example usage:
  * <code>
  * <?php

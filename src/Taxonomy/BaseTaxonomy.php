@@ -92,8 +92,9 @@ abstract class BaseTaxonomy
     /**
      * Constructor
      *
-     * Initialize the taxonomy properties such as hierarchical, rewrite,
-     * and extra_args.
+     * Initialize the taxonomy properties.
+     * Override $hierarchical to false for non-hierarchical (tag-style) taxonomies.
+     * Set $extra_args for additional WordPress taxonomy registration options.
      */
     abstract public function __construct();
 

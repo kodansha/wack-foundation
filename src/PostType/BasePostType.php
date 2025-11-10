@@ -37,9 +37,9 @@ namespace WackFoundation\PostType;
  *         return 'Article';
  *     }
  *
- *     public function __construct(int $menu_position = 21)
+ *     public function __construct()
  *     {
- *         $this->menu_position = $menu_position;
+ *         $this->menu_position = 21;
  *         $this->menu_icon = 'dashicons-media-document';
  *         $this->extra_args = [
  *             'supports' => ['title', 'editor', 'thumbnail', 'excerpt'],
@@ -114,9 +114,10 @@ abstract class BasePostType
     /**
      * Constructor
      *
-     * @param int $menu_position The position in the menu order the post type should appear
+     * Initialize the post type properties such as menu_position, menu_icon,
+     * and extra_args.
      */
-    abstract public function __construct(int $menu_position = 20);
+    abstract public function __construct();
 
     /**
      * Register the custom post type

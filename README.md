@@ -390,6 +390,9 @@ Hides the content editor (title and content fields) for specific post types wher
 **Default behavior:**
 - No post types have the editor disabled (empty array)
 
+**Why not remove 'editor' support?**
+While you can disable the content editor by removing `'editor'` from a post type's `supports` array, this prevents the Gutenberg UI from loading entirely. This class allows you to hide the content editor while maintaining the block editor interface, ensuring a consistent UI across all post types.
+
 **Filter:**
 
 ##### `wack_content_editor_disabled_post_types`
@@ -417,6 +420,7 @@ add_filter('wack_content_editor_disabled_post_types', fn() => ['landing-page']);
 - Loads a CSS file that hides the editor interface
 - Only loads on the specified post types
 - Content is still stored in the database; only the UI is hidden
+- Preserves the Gutenberg block editor UI for consistency
 
 ---
 
@@ -723,8 +727,9 @@ class AuthorPostType extends BasePostType
     {
         $this->menu_position = 21;
         $this->menu_icon = 'dashicons-admin-users';
-        $this->supports = ['title', 'editor', 'thumbnail'];
-        $this->has_archive = true;
+        $this->extra_args = [
+            'supports' => ['title', 'editor', 'thumbnail'],
+        ];
     }
 }
 
@@ -753,20 +758,18 @@ add_filter('wack_post_type_label_templates', function($templates, $post_type) {
 **Required Methods:**
 - `postTypeName()`: Return the post type slug (e.g., 'product', 'author')
 - `postTypeLabel()`: Return the singular label (e.g., 'Product', '商品')
+- `__construct()`: Initialize properties (menu_position, menu_icon, extra_args, etc.)
 
 **Customizable Properties:**
-- `$menu_icon`: Dashicon class (default: `''`)
+- `$menu_icon`: Dashicon class or custom URL (default: `null`)
 - `$menu_position`: Admin menu position (default: `20`)
-- `$supports`: Supported features array (default: `['title', 'editor']`)
 - `$public`: Public visibility (default: `true`)
-- `$show_ui`: Show admin UI (default: `true`)
 - `$publicly_queryable`: Publicly queryable (default: `true`)
+- `$show_ui`: Show admin UI (default: `true`)
 - `$show_in_rest`: REST API enabled (default: `true`)
-- `$has_archive`: Enable archive (default: `false`)
-- `$rewrite`: Rewrite rules (default: `false`)
-- `$capability_type`: Capability type (default: `'post'`)
-- `$taxonomies`: Associated taxonomies (default: `[]`)
+- `$has_archive`: Enable archive (default: `true`)
 - `$extra_args`: Additional `register_post_type()` arguments (default: `[]`)
+  - Common usage: `supports`, `taxonomies`, `rewrite`, `capability_type`, etc.
 
 ---
 
@@ -775,46 +778,103 @@ add_filter('wack_post_type_label_templates', function($templates, $post_type) {
 Abstract base class for registering custom taxonomies with sensible defaults for headless WordPress.
 
 **Features:**
-- Simplified taxonomy registration
+- Simplified taxonomy registration with minimal boilerplate
 - Headless-friendly defaults
-- REST API exposure
-- Hierarchical or flat taxonomies
-- Flexible label generation
+- REST API exposure enabled by default
+- Hierarchical (category-style) by default
+- Automatic label generation with locale support (English/Japanese)
 
-**Usage:**
+**Basic Usage:**
 ```php
 <?php
 namespace MyTheme\Taxonomies;
 
 use WackFoundation\Taxonomy\BaseTaxonomy;
 
-class ProductCategory extends BaseTaxonomy
+class GenreTaxonomy extends BaseTaxonomy
 {
-    protected string $taxonomy = 'product_category';
-    protected string $singular_name = 'Product Category';
-    protected string $plural_name = 'Product Categories';
-    protected bool $hierarchical = true;
+    public static function taxonomyKey(): string
+    {
+        return 'genre';
+    }
 
-    protected array $associated_to = [
-        'product',
-    ];
+    public static function taxonomyLabel(): string
+    {
+        return 'ジャンル'; // Or 'Genre' for English
+    }
+
+    public function __construct()
+    {
+        $this->extra_args = [
+            'rewrite' => ['slug' => 'genres'],
+            'show_in_nav_menus' => true,
+        ];
+    }
 }
 
-// Register the taxonomy
-new ProductCategory();
+// Register the taxonomy for specific post types
+new GenreTaxonomy()->register(['post', 'article']);
 ```
 
-**Override methods:**
-- `getArgs()`: Customize taxonomy registration arguments
-- `getLabels()`: Customize admin labels
-- `getAssociatedPostTypes()`: Define associated post types
+**Non-hierarchical (tag-style) taxonomy:**
+```php
+<?php
+class TagTaxonomy extends BaseTaxonomy
+{
+    public static function taxonomyKey(): string
+    {
+        return 'custom_tag';
+    }
 
-**Default configuration:**
-- `public`: `true`
-- `show_ui`: `true`
-- `show_in_rest`: `true` (REST API enabled)
-- `rewrite`: `false` (headless - no permalinks)
-- `hierarchical`: `false` (tag-like by default)
+    public static function taxonomyLabel(): string
+    {
+        return 'カスタムタグ';
+    }
+
+    public function __construct()
+    {
+        // Override to make it non-hierarchical (tag-style)
+        $this->hierarchical = false;
+
+        $this->extra_args = [
+            'rewrite' => ['slug' => 'tags'],
+            'show_tagcloud' => true,
+        ];
+    }
+}
+```
+
+**Label Generation:**
+Labels are automatically generated based on the site's locale and taxonomy type:
+- **Hierarchical taxonomies**: Use category-style labels
+  - Japanese: "カテゴリー一覧", "カテゴリーを追加", etc.
+  - English: "All Categories", "Add Category", etc.
+- **Non-hierarchical taxonomies**: Use tag-style labels
+  - Japanese: "すべてのタグ", "タグを追加", "人気のタグ", etc.
+  - English: "All Tags", "Add Tag", "Popular Tags", etc.
+
+The taxonomy label from `taxonomyLabel()` is automatically inserted into the templates.
+
+**Customizing Labels (Optional):**
+```php
+<?php
+add_filter('wack_taxonomy_label_templates', function($templates, $taxonomy_key, $is_hierarchical) {
+    // Customize specific labels
+    $templates['add_new_item'] = 'Create New';
+    return $templates;
+}, 10, 3);
+```
+
+**Required Methods:**
+- `taxonomyKey()`: Return the taxonomy slug (e.g., 'genre', 'product_tag')
+- `taxonomyLabel()`: Return the singular label (e.g., 'Genre', 'ジャンル')
+- `__construct()`: Initialize properties (hierarchical, extra_args, etc.)
+
+**Customizable Properties:**
+- `$hierarchical`: Whether hierarchical (category-style) or flat (tag-style) (default: `true`)
+- `$show_in_rest`: REST API enabled (default: `true`)
+- `$extra_args`: Additional `register_taxonomy()` arguments (default: `[]`)
+  - Common usage: `rewrite`, `show_in_nav_menus`, `show_admin_column`, `show_tagcloud`, etc.
 
 ---
 
