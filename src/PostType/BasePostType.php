@@ -6,8 +6,11 @@ namespace WackFoundation\PostType;
  * Base abstract class for custom post type registration
  *
  * A wrapper class to handle register_post_type API arguments in a type-safe manner.
- * Child classes define the minimum requirements such as post type name, label, position, and icon,
- * and can adjust supports, taxonomies, and extra_args as needed.
+ * Child classes define the minimum requirements such as post type name and label,
+ * and can configure all WordPress post type registration options.
+ *
+ * Most properties use common default values for typical use cases, which differ from
+ * WordPress core defaults. Properties with non-core defaults are documented accordingly.
  *
  * Reference: https://developer.wordpress.org/reference/functions/register_post_type/
  *
@@ -26,71 +29,128 @@ namespace WackFoundation\PostType;
  *         return 'Article';
  *     }
  *
- *     public function __construct(int $menu_position)
+ *     public function __construct(int $menu_position = 21)
  *     {
  *         $this->menu_position = $menu_position;
  *         $this->menu_icon = 'dashicons-media-document';
  *         $this->supports = ['title', 'editor', 'thumbnail', 'excerpt'];
  *         $this->taxonomies = ['genre', 'post_tag'];
- *         $this->extra_args['exclude_from_search'] = false;
- *     }
- *
- *     protected function createLabels(): array
- *     {
- *         $label = static::postTypeLabel();
- *         return [
- *             'name' => $label,
- *             'add_new' => __('Add New', 'my-theme'),
- *             'add_new_item' => sprintf(__('Add New %s', 'my-theme'), $label),
- *             // ... other labels
- *         ];
+ *         $this->has_archive = true;
  *     }
  * }
  *
  * // Register the custom post type
- * new ArticlePostType(21)->register();
+ * new ArticlePostType()->register();
  * ?>
  * </code>
  */
 abstract class BasePostType
 {
-    /** @var string Admin menu icon (Dashicons, etc.) */
-    protected string $menu_icon = '';
+    /** @var string A short descriptive summary of what the post type is */
+    protected string $description = '';
 
-    /** @var int Menu position (around 20 for after Posts/Media) */
-    protected int $menu_position = 20;
-
-    /** @var array Supported features */
-    protected array $supports = ['title', 'editor'];
-
-    /** @var bool Whether the post type is publicly accessible */
+    /** @var bool Whether a post type is intended for use publicly (WordPress core default: false, but true is recommended for most use cases) */
     protected bool $public = true;
 
-    /** @var bool Whether to show admin UI */
-    protected bool $show_ui = true;
+    /** @var bool Whether the post type is hierarchical (e.g. page) */
+    protected bool $hierarchical = false;
 
-    /** @var bool Whether the post type is publicly queryable */
-    protected bool $publicly_queryable = true;
+    /** @var bool|null Whether to exclude posts with this post type from front end search results */
+    protected ?bool $exclude_from_search = null;
 
-    /** @var bool Whether to show in REST API */
-    protected bool $show_in_rest = true;
+    /** @var bool|null Whether queries can be performed on the front end (WordPress core default: null, but true is recommended for most use cases) */
+    protected ?bool $publicly_queryable = true;
 
-    /** @var bool Whether to use query var */
-    protected bool $query_var = true;
+    /** @var bool|null Whether this post type is embeddable (WordPress 6.8.0+) */
+    protected ?bool $embeddable = null;
 
-    /** @var bool|string Archive slug */
-    protected bool|string $has_archive = true;
+    /** @var bool|null Whether to generate and allow a UI for managing this post type in the admin (WordPress core default: null, but true is recommended for most use cases) */
+    protected ?bool $show_ui = true;
 
-    /** @var bool|array Rewrite rules */
-    protected bool|array $rewrite = true;
+    /** @var bool|string|null Where to show the post type in the admin menu */
+    protected bool|string|null $show_in_menu = null;
 
-    /** @var string Base capability type (post, page, etc.) */
-    protected string $capability_type = 'post';
+    /** @var bool|null Makes this post type available for selection in navigation menus */
+    protected ?bool $show_in_nav_menus = null;
 
-    /** @var array Associated taxonomies */
+    /** @var bool|null Makes this post type available via the admin bar */
+    protected ?bool $show_in_admin_bar = null;
+
+    /** @var int|null The position in the menu order the post type should appear (WordPress core default: null, but 20 is recommended for most use cases) */
+    protected ?int $menu_position = 20;
+
+    /** @var string|null The URL or reference to the icon to be used for this menu */
+    protected ?string $menu_icon = null;
+
+    /** @var string|array The string to use to build the read, edit, and delete capabilities */
+    protected string|array $capability_type = 'post';
+
+    /** @var bool Whether to use the internal default meta capability handling */
+    protected bool $map_meta_cap = false;
+
+    /** @var array|null Provide a callback function that sets up the meta boxes for the edit form */
+    protected ?array $register_meta_box_cb = null;
+
+    /** @var array An array of taxonomy identifiers that will be registered for the post type */
     protected array $taxonomies = [];
 
-    /** @var array Additional arguments to pass to register_post_type */
+    /** @var bool|string Whether there should be post type archives, or if a string, the archive slug to use */
+    protected bool|string $has_archive = false;
+
+    /** @var string|bool Sets the query_var key for this post type */
+    protected string|bool $query_var = true;
+
+    /** @var bool Whether to allow this post type to be exported */
+    protected bool $can_export = true;
+
+    /** @var bool|null Whether to delete posts of this type when deleting a user */
+    protected ?bool $delete_with_user = null;
+
+    /** @var array Array of blocks to use as the default initial state for an editor session */
+    protected array $template = [];
+
+    /** @var string|false Whether the block template should be locked if $template is set */
+    protected string|false $template_lock = false;
+
+    /** @var array|bool Triggers the handling of rewrites for this post type */
+    protected array|bool $rewrite = true;
+
+    /** @var array|bool The features supported by the post type */
+    protected array|bool $supports = ['title', 'editor'];
+
+    /** @var bool Whether this post type should appear in the REST API (WordPress core default: false, but true is recommended for most use cases) */
+    protected bool $show_in_rest = true;
+
+    /** @var string|bool|null The base path for this post type's REST API endpoints */
+    protected string|bool|null $rest_base = null;
+
+    /** @var string|bool|null The namespace for this post type's REST API endpoints */
+    protected string|bool|null $rest_namespace = null;
+
+    /** @var string|bool|null The controller for this post type's REST API endpoints */
+    protected string|bool|null $rest_controller_class = null;
+
+    /** @var string|bool|null The controller for this post type's revisions REST API endpoints (WordPress 6.4.0+) */
+    protected string|bool|null $revisions_rest_controller_class = null;
+
+    /** @var string|bool|null The controller for this post type's autosave REST API endpoints (WordPress 6.4.0+) */
+    protected string|bool|null $autosave_rest_controller_class = null;
+
+    /** @var bool|null A flag to register the post type REST API controller after its associated autosave / revisions controllers (WordPress 6.4.0+) */
+    protected ?bool $late_route_registration = null;
+
+    /**
+     * Additional arguments to pass to register_post_type
+     *
+     * Use this only for:
+     * - Future WordPress arguments not yet supported by this class
+     * - Plugin-specific custom arguments
+     * - Overriding computed values in special cases
+     *
+     * For standard WordPress arguments, use the dedicated properties instead.
+     *
+     * @var array
+     */
     protected array $extra_args = [];
 
     /**
@@ -115,12 +175,9 @@ abstract class BasePostType
     /**
      * Constructor
      *
-     * Initialize the post type properties such as menu_position, menu_icon,
-     * supports, taxonomies, and extra_args.
-     *
-     * @param int $menu_position The position in the menu order this post type should appear
+     * @param int $menu_position The position in the menu order the post type should appear
      */
-    abstract public function __construct(int $menu_position);
+    abstract public function __construct(int $menu_position = 20);
 
     /**
      * Register the custom post type
@@ -140,7 +197,7 @@ abstract class BasePostType
      * Build the arguments array to pass to register_post_type
      *
      * Combines base configuration with custom settings from child classes.
-     * Child classes can adjust supports, taxonomies, and extra_args in the constructor.
+     * All WordPress post type registration arguments are supported.
      *
      * @return array Arguments array for register_post_type()
      */
@@ -148,18 +205,50 @@ abstract class BasePostType
     {
         $base = [
             'labels' => $this->createLabels(),
-            'menu_icon' => $this->menu_icon,
-            'menu_position' => $this->menu_position,
-            'supports' => $this->supports,
+            'description' => $this->description,
             'public' => $this->public,
-            'show_ui' => $this->show_ui,
+            'hierarchical' => $this->hierarchical,
+            'exclude_from_search' => $this->exclude_from_search,
             'publicly_queryable' => $this->publicly_queryable,
-            'show_in_rest' => $this->show_in_rest,
-            'has_archive' => $this->has_archive,
-            'rewrite' => $this->rewrite,
+            'show_ui' => $this->show_ui,
+            'show_in_menu' => $this->show_in_menu,
+            'show_in_nav_menus' => $this->show_in_nav_menus,
+            'show_in_admin_bar' => $this->show_in_admin_bar,
+            'menu_position' => $this->menu_position,
+            'menu_icon' => $this->menu_icon,
             'capability_type' => $this->capability_type,
+            'map_meta_cap' => $this->map_meta_cap,
+            'register_meta_box_cb' => $this->register_meta_box_cb,
             'taxonomies' => $this->taxonomies,
+            'has_archive' => $this->has_archive,
+            'query_var' => $this->query_var,
+            'can_export' => $this->can_export,
+            'delete_with_user' => $this->delete_with_user,
+            'template' => $this->template,
+            'template_lock' => $this->template_lock,
+            'rewrite' => $this->rewrite,
+            'supports' => $this->supports,
+            'show_in_rest' => $this->show_in_rest,
+            'rest_base' => $this->rest_base,
+            'rest_namespace' => $this->rest_namespace,
+            'rest_controller_class' => $this->rest_controller_class,
         ];
+
+        // Add WordPress 6.4.0+ properties if available
+        if (property_exists($this, 'revisions_rest_controller_class')) {
+            $base['revisions_rest_controller_class'] = $this->revisions_rest_controller_class;
+        }
+        if (property_exists($this, 'autosave_rest_controller_class')) {
+            $base['autosave_rest_controller_class'] = $this->autosave_rest_controller_class;
+        }
+        if (property_exists($this, 'late_route_registration')) {
+            $base['late_route_registration'] = $this->late_route_registration;
+        }
+
+        // Add WordPress 6.8.0+ properties if available
+        if (property_exists($this, 'embeddable')) {
+            $base['embeddable'] = $this->embeddable;
+        }
 
         // Merge/override values specified in extra_args by the user
         return array_merge($base, $this->extra_args);
