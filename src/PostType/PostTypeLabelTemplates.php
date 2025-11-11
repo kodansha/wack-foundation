@@ -16,7 +16,7 @@ class PostTypeLabelTemplates
      * Based on WordPress core's default labels for the 'post' post type.
      * Each template uses sprintf-style placeholders where %s is replaced with the post type label.
      */
-    public const TEMPLATES_EN = [
+    public const array TEMPLATES_EN = [
         'name' => '%s',
         'menu_name' => '%s',
         'add_new' => 'Add',
@@ -54,7 +54,7 @@ class PostTypeLabelTemplates
      * Based on WordPress core's Japanese translation for the 'post' post type.
      * Each template uses sprintf-style placeholders where %s is replaced with the post type label.
      */
-    public const TEMPLATES_JA = [
+    public const array TEMPLATES_JA = [
         'name' => '%s',
         'menu_name' => '%s',
         'add_new' => '追加',
