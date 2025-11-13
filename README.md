@@ -4,6 +4,7 @@
 - [Purpose \& Design Philosophy](#purpose--design-philosophy)
   - [Key Principles](#key-principles)
 - [Installation](#installation)
+  - [Installing via Composer](#installing-via-composer)
   - [Using as a Parent Theme](#using-as-a-parent-theme)
 - [Features](#features)
   - [Appearance](#appearance)
@@ -59,7 +60,21 @@ This theme is built for **headless WordPress** setups where:
 
 ## Installation
 
-> **TODO**: Installation instructions pending finalization.
+### Installing via Composer
+
+This theme is available only through Composer.
+
+**Installation steps:**
+
+1. Require the theme package:
+
+```bash
+composer require kodansha/wack-foundation
+```
+
+2. The theme will be installed to `web/app/themes/wack-foundation` (when using Bedrock) or `wp-content/themes/wack-foundation` (standard WordPress).
+
+3. Activate the theme or use it as a parent theme for your child theme.
 
 ### Using as a Parent Theme
 
