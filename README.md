@@ -364,6 +364,9 @@ Controls which block variations are available in the block editor. This can be u
 
 **Default behavior:**
 - **All** variations are disabled by default for configured block types (empty array)
+- **Special handling:** `core/paragraph` and `core/heading` default to empty array (all variations disabled) even if not configured
+  - This prevents WordPress 6.9+ stretchy variations (`stretchy-paragraph`, `stretchy-heading`) from being enabled by default
+  - To enable these variations, explicitly specify them in the filter
 
 **Filter:**
 
@@ -373,39 +376,41 @@ Specify which variations should be available for each block type.
 
 ```php
 <?php
-// Enable YouTube and Vimeo embeds only
+// Enable YouTube embeds only
 add_filter('wack_block_enabled_variations', fn() => [
     'core/embed' => [
         'youtube',
-        'vimeo',
     ],
 ]);
 
-// Enable social media embeds
+// Enable stretchy-paragraph (WordPress 6.9+)
 add_filter('wack_block_enabled_variations', fn() => [
-    'core/embed' => [
-        'twitter',
-        'facebook',
-        'instagram',
+    'core/paragraph' => [
+        'stretchy-paragraph',
     ],
 ]);
 
 // Control variations for multiple block types
 add_filter('wack_block_enabled_variations', fn() => [
     'core/embed' => ['youtube', 'vimeo'],
-    // Add more block types as needed
+    'core/paragraph' => ['stretchy-paragraph'], // Explicitly enable
+    // core/heading defaults to [] (stretchy-heading disabled)
 ]);
 ```
 
 **Parameters:**
 - `array<string, array> $variations` - Map of block types to their enabled variation slugs
 
-**Default:** `[]` (no blocks configured, no variations disabled)
+**Default:** `[]` (no blocks configured, but core/paragraph and core/heading default to empty arrays)
 
 **Embed variation reference:**
 - Common providers: `youtube`, `vimeo`, `twitter`, `facebook`, `instagram`, `spotify`, etc.
 - Full list available in WordPress core source
 - Runtime inspection: Run `wp.blocks.getBlockVariations('core/embed')` in browser console
+
+**WordPress 6.9+ variations:**
+- `stretchy-paragraph` - Paragraph block with adjustable width
+- `stretchy-heading` - Heading block with adjustable width
 
 ---
 

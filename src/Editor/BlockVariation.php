@@ -15,6 +15,12 @@ namespace WackFoundation\Editor;
  * be disabled via JavaScript, so CSS is used to hide them from the block inserter
  * when not enabled.
  *
+ * **Special handling for core/paragraph and core/heading:**
+ * These blocks default to having all variations disabled (empty array) unless
+ * explicitly configured in the filter. This prevents WordPress 6.9+ stretchy
+ * variations (stretchy-paragraph, stretchy-heading) from being enabled by default.
+ * To enable these variations, explicitly specify them in the filter.
+ *
  * To find the list of all block variations for a specific block, you can run the
  * following in the browser console on the block editor page:
  * `wp.blocks.getBlockVariations('core/embed')`
@@ -35,6 +41,10 @@ namespace WackFoundation\Editor;
  *             'youtube',
  *             'vimeo',
  *             'url', // Include 'url' to allow generic URL embed block
+ *         ],
+ *         // Explicitly enable stretchy-paragraph (WordPress 6.9+)
+ *         'core/paragraph' => [
+ *             'stretchy-paragraph',
  *         ],
  *         // Add more block types and their enabled variations as needed
  *     ];
@@ -63,10 +73,13 @@ class BlockVariation
      *
      * Applies the 'wack_block_enabled_variations' filter to allow customization.
      *
-     * Note: For embed blocks, include 'url' in the array if you want to allow
-     * the generic URL embed block. The 'url' variation is handled differently
-     * from other variations because it cannot be disabled via JavaScript and
-     * requires CSS to hide it.
+     * Special handling:
+     * - For embed blocks, include 'url' in the array if you want to allow the generic
+     *   URL embed block. The 'url' variation is handled differently from other variations
+     *   because it cannot be disabled via JavaScript and requires CSS to hide it.
+     * - For core/paragraph and core/heading, variations are disabled by default (empty array)
+     *   unless explicitly configured. This prevents WordPress 6.9+ stretchy variations
+     *   (stretchy-paragraph, stretchy-heading) from being enabled by default.
      *
      * @return array<string, string[]> Map of block types to their enabled variations
      *                                  e.g., ['core/embed' => ['youtube', 'vimeo', 'url']]
@@ -79,7 +92,18 @@ class BlockVariation
          * @param array<string, string[]> $variations Map of block types to enabled variation names.
          *                                             Default empty array.
          */
-        return apply_filters('wack_block_enabled_variations', []);
+        $variations = apply_filters('wack_block_enabled_variations', []);
+
+        // Default core/paragraph and core/heading to empty array if not configured
+        // This disables WordPress 6.9+ stretchy variations by default
+        if (!isset($variations['core/paragraph'])) {
+            $variations['core/paragraph'] = [];
+        }
+        if (!isset($variations['core/heading'])) {
+            $variations['core/heading'] = [];
+        }
+
+        return $variations;
     }
 
     /**
