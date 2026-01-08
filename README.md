@@ -17,7 +17,7 @@
     - [Block Type Controller](#block-type-controller)
     - [Block Style Manager](#block-style-manager)
     - [Format Controller](#format-controller)
-    - [Embed Block Variation Manager](#embed-block-variation-manager)
+    - [Block Variation Manager](#block-variation-manager)
     - [Content Editor Disabler](#content-editor-disabler)
     - [Quick Edit Disabler](#quick-edit-disabler)
   - [Media](#media)
@@ -358,43 +358,54 @@ add_filter('wack_text_format_enabled_types', fn() => [
 
 ---
 
-#### Embed Block Variation Manager
+#### Block Variation Manager
 
-Controls which embed block variations (YouTube, Twitter, Vimeo, etc.) are available in the block editor.
+Controls which block variations are available in the block editor. This can be used to restrict variations for any block type, such as embed blocks (YouTube, Twitter, Vimeo, etc.).
 
 **Default behavior:**
-- **All** embed variations are disabled by default (empty array)
+- **All** variations are disabled by default for configured block types (empty array)
 
 **Filter:**
 
-##### `wack_embed_block_enabled_variations`
+##### `wack_block_enabled_variations`
 
-Specify which embed providers should be available.
+Specify which variations should be available for each block type.
 
 ```php
 <?php
 // Enable YouTube and Vimeo embeds only
-add_filter('wack_embed_block_enabled_variations', fn() => [
-    'youtube',
-    'vimeo',
+add_filter('wack_block_enabled_variations', fn() => [
+    'core/embed' => [
+        'youtube',
+        'vimeo',
+    ],
 ]);
 
 // Enable social media embeds
-add_filter('wack_embed_block_enabled_variations', fn() => [
-    'twitter',
-    'facebook',
-    'instagram',
+add_filter('wack_block_enabled_variations', fn() => [
+    'core/embed' => [
+        'twitter',
+        'facebook',
+        'instagram',
+    ],
+]);
+
+// Control variations for multiple block types
+add_filter('wack_block_enabled_variations', fn() => [
+    'core/embed' => ['youtube', 'vimeo'],
+    // Add more block types as needed
 ]);
 ```
 
 **Parameters:**
-- `array $variations` - Array of embed variation slugs
+- `array<string, array> $variations` - Map of block types to their enabled variation slugs
 
-**Default:** `[]` (all embeds disabled)
+**Default:** `[]` (no blocks configured, no variations disabled)
 
 **Embed variation reference:**
 - Common providers: `youtube`, `vimeo`, `twitter`, `facebook`, `instagram`, `spotify`, etc.
 - Full list available in WordPress core source
+- Runtime inspection: Run `wp.blocks.getBlockVariations('core/embed')` in browser console
 
 ---
 

@@ -5,8 +5,8 @@ use WackFoundation\Comment\CommentDisabler;
 use WackFoundation\Dashboard\DashboardDisabler;
 use WackFoundation\Editor\BlockStyle;
 use WackFoundation\Editor\BlockType;
+use WackFoundation\Editor\BlockVariation;
 use WackFoundation\Editor\ContentEditorDisabler;
-use WackFoundation\Editor\EmbedBlockVariation;
 use WackFoundation\Editor\Format;
 use WackFoundation\Editor\QuickEditDisabler;
 use WackFoundation\Media\ImageSizeControl;
@@ -23,7 +23,7 @@ add_theme_support('post-thumbnails');
 // エディタ設定
 //==============================================================================
 new ContentEditorDisabler();
-new EmbedBlockVariation();
+new BlockVariation();
 new Format();
 new BlockStyle();
 new BlockType();
