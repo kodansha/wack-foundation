@@ -17,7 +17,7 @@
     - [Block Type Controller](#block-type-controller)
     - [Block Style Manager](#block-style-manager)
     - [Format Controller](#format-controller)
-    - [Embed Block Variation Manager](#embed-block-variation-manager)
+    - [Block Variation Manager](#block-variation-manager)
     - [Content Editor Disabler](#content-editor-disabler)
     - [Quick Edit Disabler](#quick-edit-disabler)
   - [Media](#media)
@@ -358,43 +358,59 @@ add_filter('wack_text_format_enabled_types', fn() => [
 
 ---
 
-#### Embed Block Variation Manager
+#### Block Variation Manager
 
-Controls which embed block variations (YouTube, Twitter, Vimeo, etc.) are available in the block editor.
+Controls which block variations are available in the block editor. This can be used to restrict variations for any block type, such as embed blocks (YouTube, Twitter, Vimeo, etc.).
 
 **Default behavior:**
-- **All** embed variations are disabled by default (empty array)
+- **All** variations are disabled by default for configured block types (empty array)
+- **Special handling:** `core/paragraph` and `core/heading` default to empty array (all variations disabled) even if not configured
+  - This prevents WordPress 6.9+ stretchy variations (`stretchy-paragraph`, `stretchy-heading`) from being enabled by default
+  - To enable these variations, explicitly specify them in the filter
 
 **Filter:**
 
-##### `wack_embed_block_enabled_variations`
+##### `wack_block_enabled_variations`
 
-Specify which embed providers should be available.
+Specify which variations should be available for each block type.
 
 ```php
 <?php
-// Enable YouTube and Vimeo embeds only
-add_filter('wack_embed_block_enabled_variations', fn() => [
-    'youtube',
-    'vimeo',
+// Enable YouTube embeds only
+add_filter('wack_block_enabled_variations', fn() => [
+    'core/embed' => [
+        'youtube',
+    ],
 ]);
 
-// Enable social media embeds
-add_filter('wack_embed_block_enabled_variations', fn() => [
-    'twitter',
-    'facebook',
-    'instagram',
+// Enable stretchy-paragraph (WordPress 6.9+)
+add_filter('wack_block_enabled_variations', fn() => [
+    'core/paragraph' => [
+        'stretchy-paragraph',
+    ],
+]);
+
+// Control variations for multiple block types
+add_filter('wack_block_enabled_variations', fn() => [
+    'core/embed' => ['youtube', 'vimeo'],
+    'core/paragraph' => ['stretchy-paragraph'], // Explicitly enable
+    // core/heading defaults to [] (stretchy-heading disabled)
 ]);
 ```
 
 **Parameters:**
-- `array $variations` - Array of embed variation slugs
+- `array<string, array> $variations` - Map of block types to their enabled variation slugs
 
-**Default:** `[]` (all embeds disabled)
+**Default:** `[]` (no blocks configured, but core/paragraph and core/heading default to empty arrays)
 
 **Embed variation reference:**
 - Common providers: `youtube`, `vimeo`, `twitter`, `facebook`, `instagram`, `spotify`, etc.
 - Full list available in WordPress core source
+- Runtime inspection: Run `wp.blocks.getBlockVariations('core/embed')` in browser console
+
+**WordPress 6.9+ variations:**
+- `stretchy-paragraph` - Paragraph block with adjustable width
+- `stretchy-heading` - Heading block with adjustable width
 
 ---
 
