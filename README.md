@@ -198,19 +198,24 @@ add_filter('wack_dashboard_allowed_capabilities', function($capabilities) {
 Controls which Gutenberg blocks are available in the block editor. Uses a minimal whitelist approach.
 
 **Default allowed blocks:**
-- `core/embed`
 - `core/heading`
 - `core/image`
 - `core/list`
 - `core/list-item`
 - `core/paragraph`
 
-All other blocks (including media, widgets, etc.) are **disabled by default**.
+All other blocks (including media, embeds, widgets, etc.) are **disabled by default**.
 
-**Important:** Some of the enabled blocks have variations (e.g., `core/embed` has YouTube/Twitter/etc., `core/paragraph` has stretchy-paragraph). All block variations are **disabled by default** even if the block itself is enabled. You must use the `wack_block_enabled_variations` filter to selectively enable specific variations. See [Block Variation Manager](#block-variation-manager) for details.
+**Important:** Some of the default blocks have variations (e.g., `core/paragraph` has stretchy-paragraph). All block variations are **disabled by default** even if the block itself is enabled. You must use the `wack_block_enabled_variations` filter to selectively enable specific variations. See [Block Variation Manager](#block-variation-manager) for details.
 
-Example: Enable YouTube embeds only:
+Example: Enable core/embed block and YouTube embeds:
 ```php
+// First, enable the embed block
+add_filter('wack_block_type_enabled_types', fn($blocks) => array_merge($blocks, [
+    'core/embed',
+]));
+
+// Then, enable specific embed variations
 add_filter('wack_block_enabled_variations', fn() => [
     'core/embed' => ['youtube'],
 ]);
@@ -381,26 +386,26 @@ Controls which block variations are available in the block editor. This can be u
 
 The following 18 blocks have variations registered and will default to having all variations disabled. To enable specific variations, use the filter with the exact variation names listed below.
 
-| Block Name | Description | Available Variation Names |
-|:-----------|:------------|:--------------------------|
-| `core/categories` | ターム一覧 | `terms`, `categories` |
-| `core/columns` | カラム | `one-column-full`, `two-columns-equal`, `two-columns-one-third-two-thirds`, `two-columns-two-thirds-one-third`, `three-columns-equal`, `three-columns-wider-center` |
-| `core/cover` | カバー | `cover` |
-| `core/embed` | 埋め込み | `twitter`, `youtube`, `facebook`, `instagram`, `wordpress`, `soundcloud`, `spotify`, `flickr`, `vimeo`, `animoto`, `cloudup`, `collegehumor`, `crowdsignal`, `dailymotion`, `imgur`, `issuu`, `kickstarter`, `mixcloud`, `pocket-casts`, `reddit`, `reverbnation`, `scribd`, `smugmug`, `speaker-deck`, `tiktok`, `ted`, `tumblr`, `videopress`, `wordpress-tv`, `amazon-kindle`, `pinterest`, `wolfram-cloud`, `bluesky` |
-| `core/group` | グループ | `group`, `group-row`, `group-stack`, `group-grid` |
-| `core/heading` | 見出し | `heading`, `stretchy-heading` |
-| `core/navigation-link` | カスタムリンク | `post`, `page`, `category`, `tag`, `photo_book`, `back_number`, `back_number_category`, `cover_talent` |
-| `core/paragraph` | 段落 | `paragraph`, `stretchy-paragraph` |
-| `core/post-date` | 日付 | `post-date`, `post-date-modified` |
-| `core/post-navigation-link` | 投稿ナビゲーションリンク | `post-previous`, `post-next` |
-| `core/post-terms` | 投稿タグ | `category`, `post_tag`, `back_number_category`, `cover_talent` |
-| `core/post-time-to-read` | 所要時間 | `time-to-read`, `word-count` |
-| `core/query` | クエリーループ | `title-date`, `title-excerpt`, `title-date-excerpt`, `image-date-title` |
-| `core/query-title` | クエリータイトル | `archive-title`, `search-title`, `post-type-label` |
-| `core/search` | 検索 | `default` |
-| `core/social-link` | ソーシャルアイコン | `wordpress`, `fivehundredpx`, `amazon`, `bandcamp`, `behance`, `bluesky`, `chain`, `codepen`, `deviantart`, `discord`, `dribbble`, `dropbox`, `etsy`, `facebook`, `feed`, `flickr`, `foursquare`, `goodreads`, `google`, `github`, `gravatar`, `instagram`, `lastfm`, `linkedin`, `mail`, `mastodon`, `meetup`, `medium`, `patreon`, `pinterest`, `pocket`, `reddit`, `skype`, `snapchat`, `soundcloud`, `spotify`, `telegram`, `threads`, `tiktok`, `tumblr`, `twitch`, `twitter`, `vimeo`, `vk`, `whatsapp`, `x`, `yelp`, `youtube` |
-| `core/template-part` | テンプレートパーツ | `area_header`, `area_footer` |
-| `core/terms-query` | タームクエリー | `name`, `name-count` |
+| Block Name | Available Variation Names |
+|:-----------|:--------------------------|
+| `core/categories` | `terms`, `categories` |
+| `core/columns` | `one-column-full`, `two-columns-equal`, `two-columns-one-third-two-thirds`, `two-columns-two-thirds-one-third`, `three-columns-equal`, `three-columns-wider-center` |
+| `core/cover` | `cover` |
+| `core/embed` | `twitter`, `youtube`, `facebook`, `instagram`, `wordpress`, `soundcloud`, `spotify`, `flickr`, `vimeo`, `animoto`, `cloudup`, `collegehumor`, `crowdsignal`, `dailymotion`, `imgur`, `issuu`, `kickstarter`, `mixcloud`, `pocket-casts`, `reddit`, `reverbnation`, `scribd`, `smugmug`, `speaker-deck`, `tiktok`, `ted`, `tumblr`, `videopress`, `wordpress-tv`, `amazon-kindle`, `pinterest`, `wolfram-cloud`, `bluesky` |
+| `core/group` | `group`, `group-row`, `group-stack`, `group-grid` |
+| `core/heading` | `heading`, `stretchy-heading` |
+| `core/navigation-link` | `post`, `page`, `category`, `tag`, `photo_book`, `back_number`, `back_number_category`, `cover_talent` |
+| `core/paragraph` | `paragraph`, `stretchy-paragraph` |
+| `core/post-date` | `post-date`, `post-date-modified` |
+| `core/post-navigation-link` | `post-previous`, `post-next` |
+| `core/post-terms` | `category`, `post_tag`, `back_number_category`, `cover_talent` |
+| `core/post-time-to-read` | `time-to-read`, `word-count` |
+| `core/query` | `title-date`, `title-excerpt`, `title-date-excerpt`, `image-date-title` |
+| `core/query-title` | `archive-title`, `search-title`, `post-type-label` |
+| `core/search` | `default` |
+| `core/social-link` | `wordpress`, `fivehundredpx`, `amazon`, `bandcamp`, `behance`, `bluesky`, `chain`, `codepen`, `deviantart`, `discord`, `dribbble`, `dropbox`, `etsy`, `facebook`, `feed`, `flickr`, `foursquare`, `goodreads`, `google`, `github`, `gravatar`, `instagram`, `lastfm`, `linkedin`, `mail`, `mastodon`, `meetup`, `medium`, `patreon`, `pinterest`, `pocket`, `reddit`, `skype`, `snapchat`, `soundcloud`, `spotify`, `telegram`, `threads`, `tiktok`, `tumblr`, `twitch`, `twitter`, `vimeo`, `vk`, `whatsapp`, `x`, `yelp`, `youtube` |
+| `core/template-part` | `area_header`, `area_footer` |
+| `core/terms-query` | `name`, `name-count` |
 
 **Note:** Some variation names (like `photo_book`, `back_number`, etc.) are specific to this project's custom post types and taxonomies.
 
