@@ -15,18 +15,42 @@ namespace WackFoundation\Editor;
  * be disabled via JavaScript, so CSS is used to hide them from the block inserter
  * when not enabled.
  *
- * **Special handling for core/paragraph and core/heading:**
- * These blocks default to having all variations disabled (empty array) unless
- * explicitly configured in the filter. This prevents WordPress 6.9+ stretchy
- * variations (stretchy-paragraph, stretchy-heading) from being enabled by default.
- * To enable these variations, explicitly specify them in the filter.
+ * **Default behavior for blocks with variations:**
+ * WordPress core blocks that have variations registered default to having all
+ * variations disabled (empty array) unless explicitly configured in the filter.
+ * This provides consistent behavior across all variation-enabled blocks.
  *
- * To find the list of all block variations for a specific block, you can run the
- * following in the browser console on the block editor page:
- * `wp.blocks.getBlockVariations('core/embed')`
+ * **Blocks with variations (18 blocks):**
  *
- * For embed blocks specifically, see:
- * https://developer.wordpress.org/block-editor/reference-guides/core-blocks/#embed
+ * | Block | Available Variations |
+ * |-------|----------------------|
+ * | core/categories | terms, categories |
+ * | core/columns | one-column-full, two-columns-equal, two-columns-one-third-two-thirds, two-columns-two-thirds-one-third, three-columns-equal, three-columns-wider-center |
+ * | core/cover | cover |
+ * | core/embed | twitter, youtube, facebook, instagram, wordpress, soundcloud, spotify, flickr, vimeo, animoto, cloudup, collegehumor, crowdsignal, dailymotion, imgur, issuu, kickstarter, mixcloud, pocket-casts, reddit, reverbnation, scribd, smugmug, speaker-deck, tiktok, ted, tumblr, videopress, wordpress-tv, amazon-kindle, pinterest, wolfram-cloud, bluesky |
+ * | core/group | group, group-row, group-stack, group-grid |
+ * | core/heading | heading, stretchy-heading |
+ * | core/navigation-link | post, page, category, tag, photo_book, back_number, back_number_category, cover_talent |
+ * | core/paragraph | paragraph, stretchy-paragraph |
+ * | core/post-date | post-date, post-date-modified |
+ * | core/post-navigation-link | post-previous, post-next |
+ * | core/post-terms | category, post_tag, back_number_category, cover_talent |
+ * | core/post-time-to-read | time-to-read, word-count |
+ * | core/query | title-date, title-excerpt, title-date-excerpt, image-date-title |
+ * | core/query-title | archive-title, search-title, post-type-label |
+ * | core/search | default |
+ * | core/social-link | wordpress, fivehundredpx, amazon, bandcamp, behance, bluesky, chain, codepen, deviantart, discord, dribbble, dropbox, etsy, facebook, feed, flickr, foursquare, goodreads, google, github, gravatar, instagram, lastfm, linkedin, mail, mastodon, meetup, medium, patreon, pinterest, pocket, reddit, skype, snapchat, soundcloud, spotify, telegram, threads, tiktok, tumblr, twitch, twitter, vimeo, vk, whatsapp, x, yelp, youtube |
+ * | core/template-part | area_header, area_footer |
+ * | core/terms-query | name, name-count |
+ *
+ * To inspect available variations in the browser console on the block editor page:
+ * ```javascript
+ * wp.blocks.getBlockVariations('core/embed')
+ * // Or to see all blocks with variations:
+ * wp.blocks.getBlockTypes()
+ *   .map(b => ({name: b.name, variations: wp.blocks.getBlockVariations(b.name) || []}))
+ *   .filter(b => b.variations.length > 0)
+ * ```
  *
  * Example usage:
  * <code>
@@ -37,15 +61,13 @@ namespace WackFoundation\Editor;
  * // Use filter to specify enabled variations per block type
  * add_filter('wack_block_enabled_variations', function($variations) {
  *     return [
- *         'core/embed' => [
- *             'youtube',
- *             'vimeo',
- *             'url', // Include 'url' to allow generic URL embed block
+ *         'core/embed' => ['youtube'],
+ *         'core/columns' => [
+ *             'two-columns-equal',
+ *             'three-columns-equal',
  *         ],
- *         // Explicitly enable stretchy-paragraph (WordPress 6.9+)
- *         'core/paragraph' => [
- *             'stretchy-paragraph',
- *         ],
+ *         'core/post-date' => ['post-date', 'post-date-modified'],
+ *         'core/navigation-link' => ['post', 'page', 'category'],
  *         // Add more block types and their enabled variations as needed
  *     ];
  * });
@@ -69,6 +91,37 @@ class BlockVariation
     private const string STYLE_FILE = 'hide-generic-url-embed.css';
 
     /**
+     * WordPress core blocks that have variations
+     *
+     * These blocks will default to having all variations disabled (empty array)
+     * unless explicitly configured via the filter.
+     *
+     * This list is based on actual variations registered in the WordPress block editor.
+     *
+     * @var string[]
+     */
+    private const array BLOCKS_WITH_VARIATIONS = [
+        'core/categories',
+        'core/columns',
+        'core/cover',
+        'core/embed',
+        'core/group',
+        'core/heading',
+        'core/navigation-link',
+        'core/paragraph',
+        'core/post-date',
+        'core/post-navigation-link',
+        'core/post-terms',
+        'core/post-time-to-read',
+        'core/query',
+        'core/query-title',
+        'core/search',
+        'core/social-link',
+        'core/template-part',
+        'core/terms-query',
+    ];
+
+    /**
      * Get the map of enabled block variations per block type
      *
      * Applies the 'wack_block_enabled_variations' filter to allow customization.
@@ -77,9 +130,9 @@ class BlockVariation
      * - For embed blocks, include 'url' in the array if you want to allow the generic
      *   URL embed block. The 'url' variation is handled differently from other variations
      *   because it cannot be disabled via JavaScript and requires CSS to hide it.
-     * - For core/paragraph and core/heading, variations are disabled by default (empty array)
-     *   unless explicitly configured. This prevents WordPress 6.9+ stretchy variations
-     *   (stretchy-paragraph, stretchy-heading) from being enabled by default.
+     * - All WordPress core blocks with variations default to having all variations
+     *   disabled (empty array) unless explicitly configured. This provides consistent
+     *   behavior and prevents unwanted variations from being enabled by default.
      *
      * @return array<string, string[]> Map of block types to their enabled variations
      *                                  e.g., ['core/embed' => ['youtube', 'vimeo', 'url']]
@@ -94,13 +147,12 @@ class BlockVariation
          */
         $variations = apply_filters('wack_block_enabled_variations', []);
 
-        // Default core/paragraph and core/heading to empty array if not configured
-        // This disables WordPress 6.9+ stretchy variations by default
-        if (!isset($variations['core/paragraph'])) {
-            $variations['core/paragraph'] = [];
-        }
-        if (!isset($variations['core/heading'])) {
-            $variations['core/heading'] = [];
+        // Default all blocks with variations to empty array if not configured
+        // This disables all variations by default for consistency
+        foreach (self::BLOCKS_WITH_VARIATIONS as $blockType) {
+            if (!isset($variations[$blockType])) {
+                $variations[$blockType] = [];
+            }
         }
 
         return $variations;

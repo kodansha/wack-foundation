@@ -47,8 +47,17 @@ use WP_Block_Editor_Context;
  *         'core/table',
  *         'core/video',
  *         'core/gallery',
+ *         'core/embed', // Enable embed block
  *     ]
  * ));
+ *
+ * // Note: Some blocks have variations (e.g., core/embed, core/paragraph)
+ * // All block variations are disabled by default. Use wack_block_enabled_variations
+ * // filter to enable specific variations. See BlockVariation class for details.
+ * add_filter('wack_block_enabled_variations', fn() => [
+ *     'core/embed' => ['youtube', 'vimeo'], // Enable specific embed providers
+ *     'core/paragraph' => ['stretchy-paragraph'], // Enable stretchy paragraph
+ * ]);
  * ?>
  * </code>
  */
