@@ -198,13 +198,23 @@ add_filter('wack_dashboard_allowed_capabilities', function($capabilities) {
 Controls which Gutenberg blocks are available in the block editor. Uses a minimal whitelist approach.
 
 **Default allowed blocks:**
+- `core/embed`
 - `core/heading`
 - `core/image`
 - `core/list`
 - `core/list-item`
 - `core/paragraph`
 
-All other blocks (including media, embeds, widgets, etc.) are **disabled by default**.
+All other blocks (including media, widgets, etc.) are **disabled by default**.
+
+**Important:** Some of the enabled blocks have variations (e.g., `core/embed` has YouTube/Twitter/etc., `core/paragraph` has stretchy-paragraph). All block variations are **disabled by default** even if the block itself is enabled. You must use the `wack_block_enabled_variations` filter to selectively enable specific variations. See [Block Variation Manager](#block-variation-manager) for details.
+
+Example: Enable YouTube embeds only:
+```php
+add_filter('wack_block_enabled_variations', fn() => [
+    'core/embed' => ['youtube'],
+]);
+```
 
 **Filter:**
 

@@ -49,6 +49,13 @@ use WP_Block_Editor_Context;
  *         'core/gallery',
  *     ]
  * ));
+ *
+ * // Note: Some enabled blocks have variations (e.g., core/embed, core/paragraph)
+ * // All block variations are disabled by default. Use wack_block_enabled_variations
+ * // filter to enable specific variations. See BlockVariation class for details.
+ * add_filter('wack_block_enabled_variations', fn() => [
+ *     'core/embed' => ['youtube', 'vimeo'],
+ * ]);
  * ?>
  * </code>
  */
@@ -59,11 +66,16 @@ class BlockType
      *
      * A minimal set of essential core blocks that are allowed by default.
      * These include basic content blocks like paragraphs, headings, images,
-     * and lists.
+     * lists, and embeds.
+     *
+     * Note: core/embed is included but all embed variations (YouTube, Twitter, etc.)
+     * are disabled by default. Use the 'wack_block_enabled_variations' filter to
+     * selectively enable specific embed providers.
      *
      * @var string[]
      */
     public const array DEFAULT_ALLOWED_BLOCK_TYPES = [
+        'core/embed',
         'core/heading',
         'core/image',
         'core/list',
