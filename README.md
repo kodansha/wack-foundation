@@ -1,37 +1,51 @@
 # WACK Foundation Theme
 
-- [Overview](#overview)
-- [Purpose \& Design Philosophy](#purpose--design-philosophy)
-  - [Key Principles](#key-principles)
-- [Installation](#installation)
-  - [Installing via Composer](#installing-via-composer)
-  - [Using as a Parent Theme](#using-as-a-parent-theme)
-- [Features](#features)
-  - [Appearance](#appearance)
-    - [Admin Favicon](#admin-favicon)
-  - [Comment](#comment)
-    - [Comment Disabler](#comment-disabler)
-  - [Dashboard](#dashboard)
-    - [Dashboard Disabler](#dashboard-disabler)
-  - [Editor](#editor)
-    - [Block Type Controller](#block-type-controller)
-    - [Block Style Manager](#block-style-manager)
-    - [Format Controller](#format-controller)
-    - [Block Variation Manager](#block-variation-manager)
-    - [Content Editor Disabler](#content-editor-disabler)
-    - [Quick Edit Disabler](#quick-edit-disabler)
-  - [Media](#media)
-    - [Image Size Control](#image-size-control)
-    - [Media Filename Normalizer](#media-filename-normalizer)
-  - [Security](#security)
-    - [REST API Controller](#rest-api-controller)
-    - [XML-RPC Disabler](#xml-rpc-disabler)
-  - [PostType \& Taxonomy Base Classes](#posttype--taxonomy-base-classes)
-    - [BasePostType](#baseposttype)
-    - [BaseTaxonomy](#basetaxonomy)
-  - [Validation](#validation)
-    - [BaseValidation](#basevalidation)
-- [Killer Pads Users](#killer-pads-users)
+- [WACK Foundation Theme](#wack-foundation-theme)
+  - [Overview](#overview)
+  - [Purpose \& Design Philosophy](#purpose--design-philosophy)
+    - [Key Principles](#key-principles)
+  - [Installation](#installation)
+    - [Installing via Composer](#installing-via-composer)
+    - [Using as a Parent Theme](#using-as-a-parent-theme)
+    - [Setting Up PSR-4 Autoloading](#setting-up-psr-4-autoloading)
+  - [Features](#features)
+    - [Appearance](#appearance)
+      - [Admin Favicon](#admin-favicon)
+    - [Comment](#comment)
+      - [Comment Disabler](#comment-disabler)
+    - [Dashboard](#dashboard)
+      - [Dashboard Disabler](#dashboard-disabler)
+        - [`wack_dashboard_redirect_url`](#wack_dashboard_redirect_url)
+        - [`wack_dashboard_allowed_capabilities`](#wack_dashboard_allowed_capabilities)
+    - [Editor](#editor)
+      - [Block Type Controller](#block-type-controller)
+        - [`wack_block_type_enabled_types`](#wack_block_type_enabled_types)
+      - [Block Style Manager](#block-style-manager)
+        - [`wack_block_style_enabled_styles`](#wack_block_style_enabled_styles)
+      - [Format Controller](#format-controller)
+        - [`wack_text_format_enabled_types`](#wack_text_format_enabled_types)
+      - [Block Variation Manager](#block-variation-manager)
+        - [`wack_block_enabled_variations`](#wack_block_enabled_variations)
+      - [Content Editor Disabler](#content-editor-disabler)
+        - [`wack_content_editor_disabled_post_types`](#wack_content_editor_disabled_post_types)
+      - [Quick Edit Disabler](#quick-edit-disabler)
+        - [`wack_quick_edit_enabled_post_types`](#wack_quick_edit_enabled_post_types)
+    - [Media](#media)
+      - [Image Size Control](#image-size-control)
+        - [`wack_image_size_control_custom_sizes`](#wack_image_size_control_custom_sizes)
+      - [Media Filename Normalizer](#media-filename-normalizer)
+        - [`media_filename_generator`](#media_filename_generator)
+    - [Security](#security)
+      - [REST API Controller](#rest-api-controller)
+        - [`wack_rest_api_namespace_whitelist`](#wack_rest_api_namespace_whitelist)
+        - [`wack_rest_api_forbidden_routes`](#wack_rest_api_forbidden_routes)
+      - [XML-RPC Disabler](#xml-rpc-disabler)
+    - [PostType \& Taxonomy Base Classes](#posttype--taxonomy-base-classes)
+      - [BasePostType](#baseposttype)
+      - [BaseTaxonomy](#basetaxonomy)
+    - [Validation](#validation)
+      - [BaseValidation](#basevalidation)
+  - [Killer Pads Users](#killer-pads-users)
 
 ## Overview
 
@@ -54,7 +68,7 @@ This theme is built for **headless WordPress** setups where:
 ### Key Principles
 
 1. **Deny by default, allow by exception**: Features are disabled unless explicitly enabled
-2. **Filter-driven configuration**: All behavior is customizable via WordPress filters
+2. **Filter-driven configuration**: All behavior is customizable via WordPress filters (except abstract base classes like `BasePostType`, `BaseTaxonomy`, and `BaseValidation`, which require class inheritance)
 3. **Minimal footprint**: No bloat, no legacy compatibility, no frontend assets
 4. **Developer-friendly**: Clear APIs, comprehensive documentation, predictable behavior
 
@@ -89,6 +103,89 @@ Version: 1.0.0
 ```
 
 The `Template` field must match the directory name of the WACK Foundation theme.
+
+### Setting Up PSR-4 Autoloading
+
+To use abstract base classes like `BasePostType`, `BaseTaxonomy`, and `BaseValidation`, you'll need to set up PSR-4 autoloading for your child theme.
+
+**For Bedrock projects:**
+
+Add your theme namespace to `composer.json`:
+
+```json
+{
+  "autoload": {
+    "psr-4": {
+      "MyTheme\\": "web/app/themes/my-theme/src/"
+    }
+  }
+}
+```
+
+After updating `composer.json`, regenerate the autoloader:
+
+```bash
+composer dump-autoload
+```
+
+**Directory structure:**
+
+Organize your classes following PSR-4 conventions:
+
+```
+web/app/themes/my-theme/  (or wp-content/themes/my-theme/)
+├── src/
+│   ├── PostTypes/
+│   │   ├── AuthorPostType.php      (MyTheme\PostTypes\AuthorPostType)
+│   │   └── ProductPostType.php     (MyTheme\PostTypes\ProductPostType)
+│   ├── Taxonomies/
+│   │   └── GenreTaxonomy.php       (MyTheme\Taxonomies\GenreTaxonomy)
+│   └── Validations/
+│       └── PostValidation.php      (MyTheme\Validations\PostValidation)
+├── functions.php
+└── style.css
+```
+
+**Example class file** (`src/PostTypes/AuthorPostType.php`):
+
+```php
+<?php
+namespace MyTheme\PostTypes;
+
+use WackFoundation\PostType\BasePostType;
+
+class AuthorPostType extends BasePostType
+{
+    public static function postTypeName(): string
+    {
+        return 'author';
+    }
+
+    public static function postTypeLabel(): string
+    {
+        return 'Author';
+    }
+
+    public function __construct()
+    {
+        $this->menu_icon = 'dashicons-admin-users';
+        $this->menu_position = 5;
+        $this->extra_args = [
+            'supports' => ['title', 'editor', 'thumbnail'],
+        ];
+    }
+}
+```
+
+**Register in functions.php:**
+
+```php
+<?php
+// functions.php
+new MyTheme\PostTypes\AuthorPostType()->register();
+new MyTheme\Taxonomies\GenreTaxonomy()->register(['author']);
+new MyTheme\Validations\PostValidation();
+```
 
 ## Features
 
