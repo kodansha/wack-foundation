@@ -369,27 +369,27 @@ Controls which block styles are available for core and custom blocks. Disables n
 
 **Default behavior:**
 - Only "default" block styles are enabled
-- Non-default styles (like "outline" button, "fill" quote, etc.) are disabled
+- Non-default styles (like "outline" button, "rounded" image, etc.) are disabled
 
 **Filter:**
 
 ##### `wack_block_style_enabled_styles`
 
-Specify which block styles should be available.
+Specify which block styles should be available. Format: associative array mapping block names to arrays of style names.
 
 ```php
 <?php
 // Enable specific non-default styles
-add_filter('wack_block_style_enabled_styles', fn($styles) => [
-    'core/button:outline',
-    'core/quote:fancy-quote',
-    'core/separator:wide',
-    'core/separator:dots',
+add_filter('wack_block_style_enabled_styles', fn() => [
+    'core/button' => ['outline'],
+    'core/quote' => ['plain'],
+    'core/image' => ['rounded'],
+    'core/separator' => ['wide', 'dots'],
 ]);
 ```
 
 **Parameters:**
-- `array $styles` - Array of block style identifiers in `'blockName:styleName'` format
+- `array<string, string[]> $styles` - Associative array of block styles
 
 **Default:** `[]` (all non-default styles disabled, only default styles available)
 

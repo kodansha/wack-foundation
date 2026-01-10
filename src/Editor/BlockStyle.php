@@ -49,9 +49,9 @@ use WP_Block_Type_Registry;
  *
  * // Use filter to specify enabled non-default block styles
  * add_filter('wack_block_style_enabled_styles', fn() => [
- *     'core/button:outline',
- *     'core/image:rounded',
- *     'core/quote:plain',
+ *     'core/button' => ['outline'],
+ *     'core/image' => ['rounded'],
+ *     'core/quote' => ['plain'],
  * ]);
  * ?>
  * </code>
@@ -69,21 +69,22 @@ class BlockStyle
     /**
      * Get the list of enabled block styles
      *
-    * Applies the 'wack_block_style_enabled_styles' filter to allow customization.
+     * Applies the 'wack_block_style_enabled_styles' filter to allow customization.
      *
-     * Format: 'blockName:styleName' (e.g., 'core/button:outline', 'core/image:rounded')
+     * Format: Associative array mapping block names to arrays of style names
+     * Example: ['core/button' => ['outline'], 'core/image' => ['rounded']]
      *
      * Note: Only non-default styles can be controlled. Default styles (isDefault: true)
      * always remain available and cannot be unregistered.
      *
-     * @return string[] Array of block style identifiers (e.g., 'core/button:outline')
+     * @return array<string, string[]> Associative array of block styles
      */
     protected function getEnabledStyles(): array
     {
         /**
          * Filter the block styles to enable
          *
-         * @param string[] $styles Array of block style identifiers. Default empty array.
+         * @param array<string, string[]> $styles Associative array of block styles. Default empty array.
          */
         return apply_filters('wack_block_style_enabled_styles', []);
     }
@@ -108,30 +109,25 @@ class BlockStyle
         // Get all non-default block styles from the registry
         $all_non_default_styles = $this->getAllNonDefaultBlockStyles();
 
-        // Convert to 'blockName:styleName' format for comparison
-        $all_style_identifiers = [];
-        foreach ($all_non_default_styles as $block_name => $styles) {
-            foreach ($styles as $style) {
-                $all_style_identifiers[] = $block_name . ':' . $style['name'];
-            }
-        }
+        // Get enabled styles from filter
+        $enabled_styles = $this->getEnabledStyles();
 
-        // Calculate disabled styles
-        $disabled_style_identifiers = array_values(
-            array_diff(
-                $all_style_identifiers,
-                $this->getEnabledStyles(),
-            ),
-        );
-
-        // Group styles by block name
+        // Calculate disabled styles for each block
         $disabled_by_block = [];
-        foreach ($disabled_style_identifiers as $identifier) {
-            [$block_name, $style_name] = explode(':', $identifier, 2);
-            if (!isset($disabled_by_block[$block_name])) {
-                $disabled_by_block[$block_name] = [];
+        foreach ($all_non_default_styles as $block_name => $styles) {
+            // Extract style names from the style arrays
+            $all_style_names = array_map(fn($style) => $style['name'], $styles);
+
+            // Get enabled style names for this block (default to empty array)
+            $enabled_style_names = $enabled_styles[$block_name] ?? [];
+
+            // Calculate disabled styles for this block
+            $disabled_style_names = array_values(array_diff($all_style_names, $enabled_style_names));
+
+            // Only add to result if there are disabled styles
+            if (!empty($disabled_style_names)) {
+                $disabled_by_block[$block_name] = $disabled_style_names;
             }
-            $disabled_by_block[$block_name][] = $style_name;
         }
 
         return $disabled_by_block;
