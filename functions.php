@@ -55,16 +55,3 @@ new DashboardDisabler();
 // 外観設定
 //==============================================================================
 new AdminFavicon();
-
-//==============================================================================
-// 各種機能の初期化処理（コメントアウト例）
-//==============================================================================
-// new Hook\MediaUploadHook();
-
-//==============================================================================
-// エディターのカスタマイズ系（コメントアウト例）
-//==============================================================================
-// new Editor\BaseEditorStyle\BaseEditorStyle();
-// new Editor\GutenbergAllowedBlockList\GutenbergAllowedBlockList();
-// new Editor\GutenbergCustomTextFormat\GutenbergCustomTextFormat();
-// new Editor\GutenbergRemoveBlockStyle\GutenbergRemoveBlockStyle();

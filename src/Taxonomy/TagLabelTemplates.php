@@ -16,7 +16,7 @@ class TagLabelTemplates
      * Based on WordPress core's default labels for the 'post_tag' taxonomy.
      * Each template uses sprintf-style placeholders where %s is replaced with the taxonomy label.
      */
-    public const TEMPLATES_EN = [
+    public const array TEMPLATES_EN = [
         'name' => '%s',
         'singular_name' => '%s',
         'menu_name' => '%s',
@@ -50,7 +50,7 @@ class TagLabelTemplates
      * Based on WordPress core's Japanese translation for the 'post_tag' taxonomy.
      * Each template uses sprintf-style placeholders where %s is replaced with the taxonomy label.
      */
-    public const TEMPLATES_JA = [
+    public const array TEMPLATES_JA = [
         'name' => '%s',
         'singular_name' => '%s',
         'menu_name' => '%s',

@@ -19,10 +19,11 @@
   "homepage": "https://github.com/kodansha/wack-foundation",
   "license": "GPL-3.0-or-later",
   "require": {
-    "php": ">=8.2"
+    "php": ">=8.3"
   },
   "require-dev": {
-    "laravel/pint": "^1.18"
+    "laravel/pint": "^1.18",
+    "roots/wordpress-no-content": "6.9"
   },
   "autoload": {
     "psr-4": {
