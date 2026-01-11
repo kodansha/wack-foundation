@@ -22,7 +22,8 @@
     "php": ">=8.2"
   },
   "require-dev": {
-    "laravel/pint": "^1.18"
+    "laravel/pint": "^1.18",
+    "roots/wordpress-no-content": "6.9"
   },
   "autoload": {
     "psr-4": {
