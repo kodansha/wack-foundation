@@ -9,18 +9,19 @@ use WackFoundation\Editor\BlockVariation;
 use WackFoundation\Editor\ContentEditorDisabler;
 use WackFoundation\Editor\Format;
 use WackFoundation\Editor\QuickEditDisabler;
+use WackFoundation\HealthCheck\HealthCheckEndpoint;
 use WackFoundation\Media\ImageSizeControl;
 use WackFoundation\Media\MediaFilenameNormalizer;
 use WackFoundation\Security\RestApiController;
 use WackFoundation\Security\XmlRpcDisabler;
 
 //==============================================================================
-// 初期設定
+// Initial Setup
 //==============================================================================
 add_theme_support('post-thumbnails');
 
 //==============================================================================
-// エディタ設定
+// Editor Configuration
 //==============================================================================
 new ContentEditorDisabler();
 new BlockVariation();
@@ -30,28 +31,33 @@ new BlockType();
 new QuickEditDisabler();
 
 //==============================================================================
-// メディア設定
+// Media Configuration
 //==============================================================================
 new ImageSizeControl();
 new MediaFilenameNormalizer();
 
 //==============================================================================
-// コメント設定
+// Comment Configuration
 //==============================================================================
 new CommentDisabler();
 
 //==============================================================================
-// セキュリティ設定
+// Security Configuration
 //==============================================================================
 new RestApiController();
 new XmlRpcDisabler();
 
 //==============================================================================
-// ダッシュボード設定
+// Dashboard Configuration
 //==============================================================================
 new DashboardDisabler();
 
 //==============================================================================
-// 外観設定
+// Appearance Configuration
 //==============================================================================
 new AdminFavicon();
+
+//==============================================================================
+// Health Check
+//==============================================================================
+new HealthCheckEndpoint();
