@@ -40,6 +40,8 @@
         - [`wack_rest_api_namespace_whitelist`](#wack_rest_api_namespace_whitelist)
         - [`wack_rest_api_forbidden_routes`](#wack_rest_api_forbidden_routes)
       - [XML-RPC Disabler](#xml-rpc-disabler)
+    - [Health Check](#health-check)
+      - [Health Check Endpoint](#health-check-endpoint)
     - [PostType \& Taxonomy Base Classes](#posttype--taxonomy-base-classes)
       - [BasePostType](#baseposttype)
       - [BaseTaxonomy](#basetaxonomy)
@@ -869,6 +871,41 @@ Completely disables XML-RPC functionality to prevent legacy API attacks.
 **No filters available** - XML-RPC is completely disabled. If you need XML-RPC for legacy integrations, do not instantiate this class.
 
 **Note:** XML-RPC is a legacy API and is not needed for modern WordPress usage. The REST API and Application Passwords provide better alternatives.
+
+---
+
+### Health Check
+
+#### Health Check Endpoint
+
+Provides a lightweight health check endpoint at `/healthcheck` for load balancers and monitoring systems.
+
+**Endpoint:** `/healthcheck`
+
+**Behavior:**
+- Returns HTTP 200 status code
+- Verifies database connectivity by executing a query
+- Outputs plain text response: `OK`
+- No authentication required (designed for infrastructure health checks)
+
+**Response format:**
+```
+OK
+```
+
+**Use cases:**
+- Application Load Balancer (ALB) health checks
+- Container orchestration (ECS, Kubernetes) liveness/readiness probes
+- Uptime monitoring services
+- CloudWatch Synthetics canaries
+
+**Security considerations:**
+- No sensitive information is exposed (only returns "OK")
+- Database connectivity is verified but details are not disclosed
+- Public access is intentional (required for load balancer health checks)
+- Consider implementing IP restrictions at the infrastructure layer (WAF, ALB) if needed
+
+**No filters available** - The health check endpoint is always available at `/healthcheck`. To disable it, remove the `HealthCheckEndpoint` instantiation from `functions.php`.
 
 ---
 
