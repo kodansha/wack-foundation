@@ -24,6 +24,8 @@
         - [`wack_block_style_enabled_styles`](#wack_block_style_enabled_styles)
       - [Format Controller](#format-controller)
         - [`wack_text_format_enabled_types`](#wack_text_format_enabled_types)
+      - [Link Suggestion Disabler](#link-suggestion-disabler)
+        - [`wack_link_suggestion_disabled`](#wack_link_suggestion_disabled)
       - [Block Variation Manager](#block-variation-manager)
         - [`wack_block_enabled_variations`](#wack_block_enabled_variations)
       - [Content Editor Disabler](#content-editor-disabler)
@@ -469,6 +471,46 @@ add_filter('wack_text_format_enabled_types', fn() => [
 **Format type reference:**
 - Full list: https://github.com/WordPress/gutenberg/tree/trunk/packages/format-library
 - Runtime inspection: Run `wp.data.select('core/rich-text').getFormatTypes()` in browser console
+
+---
+
+#### Link Suggestion Disabler
+
+Disables link search suggestions in the WordPress block editor's link insertion interface. This prevents users from selecting internal posts/pages when inserting links, which is particularly useful for headless WordPress installations where internal post URLs should not be used.
+
+**Default behavior:**
+- Link suggestions (internal post/page search) are **disabled by default**
+- Users can only insert links by manually typing or pasting URLs
+- The link insertion dialog will not show WordPress post/page suggestions
+
+**Why disable link suggestions?**
+In headless WordPress setups, the frontend is served from a different domain or application. Internal WordPress post permalinks (e.g., `https://wp.example.com/post-slug/`) should not be used in content, as they would point to the WordPress admin domain rather than the actual frontend. By disabling suggestions, editors are forced to manually insert the correct frontend URLs.
+
+**Filter:**
+
+##### `wack_link_suggestion_disabled`
+
+Control whether link suggestions should be disabled.
+
+```php
+<?php
+// Enable link suggestions (not recommended for headless)
+add_filter('wack_link_suggestion_disabled', fn() => false);
+
+// Explicitly disable (default behavior, no filter needed)
+add_filter('wack_link_suggestion_disabled', fn() => true);
+```
+
+**Parameters:**
+- `bool $disabled` - Whether to disable link suggestions
+
+**Default:** `true` (suggestions disabled)
+
+**Technical implementation:**
+The feature uses `wp.data.subscribe()` to continuously monitor the block editor's `__experimentalFetchLinkSuggestions` setting, as WordPress overwrites this setting multiple times during editor initialization. The override returns an empty array to prevent any suggestions from appearing.
+
+**Reference:**
+https://wordpress.org/support/topic/modify-gutenberg-link-dialog-suggestions/
 
 ---
 
