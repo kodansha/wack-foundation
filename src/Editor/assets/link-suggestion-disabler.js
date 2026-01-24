@@ -18,7 +18,7 @@ wp.domReady(() => {
   };
 
   // Continuously monitor block editor settings and override when changed
-  wp.data.subscribe(() => {
+  const unsubscribe = wp.data.subscribe(() => {
     const blockEditor = wp.data.select("core/block-editor");
 
     if (blockEditor && blockEditor.getSettings) {
@@ -34,6 +34,8 @@ wp.domReady(() => {
         wp.data.dispatch("core/block-editor").updateSettings({
           __experimentalFetchLinkSuggestions: disabledFetchLinkSuggestions,
         });
+        // Unsubscribe after successfully applying the override
+        unsubscribe();
       }
     }
   });
