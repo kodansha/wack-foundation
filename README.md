@@ -352,6 +352,21 @@ add_filter('wack_block_type_enabled_types', fn() => [
 
 **Default:** `BlockType::DEFAULT_ALLOWED_BLOCK_TYPES`
 
+##### `wack_block_type_heading_level_options`
+
+Controls which heading levels are selectable in the `core/heading` block.
+
+```php
+<?php
+// Restrict heading levels to H2 and H3 only
+add_filter('wack_block_type_heading_level_options', fn() => [2, 3]);
+```
+
+**Parameters:**
+- `array $level_options` - Array of heading level numbers
+
+**Default:** `BlockType::DEFAULT_HEADING_LEVEL_OPTIONS` (`[1, 2, 3, 4, 5, 6]`)
+
 **Block type reference:**
 Primary (PHP – suitable for CLI, diagnostics, CI):
 ```php
