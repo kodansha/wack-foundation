@@ -81,6 +81,13 @@ class BlockType
     ];
 
     /**
+     * Default heading level options for core/heading block
+     *
+     * @var int[]
+     */
+    public const array DEFAULT_HEADING_LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6];
+
+    /**
      * Get the list of allowed block types
      *
      * Applies the 'wack_block_type_enabled_types' filter to allow customization.
@@ -99,6 +106,23 @@ class BlockType
     }
 
     /**
+     * Get heading level options for core/heading block
+     *
+     * Applies the 'wack_block_type_heading_level_options' filter to allow customization.
+     *
+     * @return int[] Array of heading levels (e.g., [2, 3])
+     */
+    protected function getHeadingLevelOptions(): array
+    {
+        /**
+         * Filter the heading level options for core/heading block
+         *
+         * @param int[] $level_options Array of heading levels.
+         */
+        return apply_filters('wack_block_type_heading_level_options', self::DEFAULT_HEADING_LEVEL_OPTIONS);
+    }
+
+    /**
      * Constructor
      *
      * Registers the filter hook that restricts available blocks in the editor.
@@ -106,6 +130,7 @@ class BlockType
     public function __construct()
     {
         add_filter('allowed_block_types_all', [$this, 'filterAllowedBlockTypes'], 10, 2);
+        add_filter('register_block_type_args', [$this, 'filterBlockTypeArgs'], 10, 2);
     }
 
     /**
@@ -121,5 +146,28 @@ class BlockType
     public function filterAllowedBlockTypes(bool|array $allowed_block_types, WP_Block_Editor_Context $block_editor_context): array
     {
         return $this->getAllowedBlockTypes();
+    }
+
+    /**
+     * Filter callback for block type registration args
+     *
+     * Sets level options for core/heading block via custom filter.
+     *
+     * @param array<string, mixed> $args Block type args.
+     * @param string $block_type Block type name.
+     * @return array<string, mixed> Filtered block type args.
+     */
+    public function filterBlockTypeArgs(array $args, string $block_type): array
+    {
+        if ($block_type !== 'core/heading') {
+            return $args;
+        }
+
+        $args['attributes']['levelOptions'] = array_merge(
+            $args['attributes']['levelOptions'] ?? [],
+            ['default' => $this->getHeadingLevelOptions()],
+        );
+
+        return $args;
     }
 }
