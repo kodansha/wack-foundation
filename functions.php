@@ -10,6 +10,7 @@ use WackFoundation\Editor\ContentEditorDisabler;
 use WackFoundation\Editor\Format;
 use WackFoundation\Editor\LinkSuggestionDisabler;
 use WackFoundation\Editor\QuickEditDisabler;
+use WackFoundation\Editor\UICustomizationWorkaround;
 use WackFoundation\HealthCheck\HealthCheckEndpoint;
 use WackFoundation\Media\ImageSizeControl;
 use WackFoundation\Media\MediaFilenameNormalizer;
@@ -31,6 +32,7 @@ new LinkSuggestionDisabler();
 new BlockStyle();
 new BlockType();
 new QuickEditDisabler();
+new UICustomizationWorkaround();
 
 //==============================================================================
 // Media Configuration

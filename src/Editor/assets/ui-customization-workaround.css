@@ -1,0 +1,18 @@
+/**
+ * Block editor UI customization workaround
+ *
+ * This stylesheet only defines the utility class used by the companion JS file.
+ * All element selection and conditional logic is handled in JS; CSS has no
+ * dependency on WordPress internal class names or DOM structure.
+ *
+ * The companion JS applies `.wack-ui-hidden` to specific elements based on
+ * block selection state, post status, and per-feature config flags provided
+ * by PHP. See `ui-customization-workaround.js` for details.
+ *
+ * `!important` is required to override `display: flex` set inline by some
+ * Gutenberg components (e.g. components-flex).
+ */
+
+.wack-ui-hidden {
+  display: none !important;
+}
