@@ -32,6 +32,8 @@
         - [`wack_content_editor_disabled_post_types`](#wack_content_editor_disabled_post_types)
       - [Quick Edit Disabler](#quick-edit-disabler)
         - [`wack_quick_edit_enabled_post_types`](#wack_quick_edit_enabled_post_types)
+      - [UI Customization Workaround](#ui-customization-workaround)
+        - [`wack_ui_workaround_disabled_features`](#wack_ui_workaround_disabled_features)
     - [Media](#media)
       - [Image Size Control](#image-size-control)
         - [`wack_image_size_control_custom_sizes`](#wack_image_size_control_custom_sizes)
@@ -701,6 +703,59 @@ add_filter('wack_quick_edit_enabled_post_types', fn($types) => array_merge(
 - Prevents inconsistent data when using structured content (ACF, custom fields)
 - Forces editors to use the full editor where validation rules apply
 - Reduces accidental edits in headless workflows
+
+---
+
+#### UI Customization Workaround
+
+Hides specific block editor UI controls that cannot be suppressed through standard theme customization or block supports configuration. All adjustments are enabled by default; individual features can be disabled via a single filter.
+
+**Default behavior:**
+- All 7 adjustment groups are active
+
+**Adjustment groups and their feature keys:**
+
+| Feature key | What is hidden |
+|---|---|
+| `heading-toolbar` | "Text alignment", "Bold", "Link" controls in the heading block toolbar; "Align" button support disabled |
+| `separator-toolbar` | "Align" button support disabled (hidden as fallback if the JS filter has no effect) |
+| `image-toolbar` | "Align", "Link", "Crop", "Add caption" group in the image block toolbar; "Align" button support disabled |
+| `image-sidebar` | "Settings" panel in the image block sidebar (alt text, aspect ratio, width, height, resolution) |
+| `status-visibility` | "Password protection" and "Stick to the top of the blog" in the Status & Visibility popup |
+| `view-options-devices` | Device selection group (Desktop / Tablet / Mobile) in the View Options menu |
+| `preview-button` | Preview dropdown when published; preview dropdown and View/Preview links when private |
+
+**Filter:**
+
+##### `wack_ui_workaround_disabled_features`
+
+Pass an array of feature keys to disable specific adjustment groups. All features are enabled by default; only the listed keys are disabled.
+
+```php
+<?php
+// Disable a single feature
+add_filter('wack_ui_workaround_disabled_features', function (array $disabled): array {
+    return [...$disabled, 'status-visibility'];
+});
+
+// Disable multiple features
+add_filter('wack_ui_workaround_disabled_features', function (array $disabled): array {
+    return [...$disabled, 'image-toolbar', 'image-sidebar', 'preview-button'];
+});
+```
+
+**Parameters:**
+- `string[] $disabled` - Feature keys to disable
+
+**Default:** `[]` (all features enabled)
+
+**How it works:**
+- PHP resolves the filter and passes the resulting config to JavaScript as `window.wackUiWorkaroundConfig`
+- JavaScript handles all detection and conditional logic: it locates target elements using WP block APIs and DOM queries, then applies/removes the `wack-ui-hidden` class
+- CSS is reduced to a single rule — `.wack-ui-hidden { display: none !important }` — with no direct dependency on WordPress internal class names
+- When all features are disabled, no assets are enqueued
+
+> **Note:** Some element selectors rely on Japanese locale `aria-label` strings and will not match on non-Japanese WordPress installations. The implementation also relies on WordPress internal CSS classes and DOM structure; adjustments may stop working after a WordPress core upgrade. Verified on WordPress 6.9.3.
 
 ---
 
