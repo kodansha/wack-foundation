@@ -734,14 +734,14 @@ Pass an array of feature keys to disable specific adjustment groups. All feature
 ```php
 <?php
 // Disable a single feature
-add_filter('wack_ui_workaround_disabled_features', function (array $disabled): array {
-    return [...$disabled, 'status-visibility'];
-});
+add_filter('wack_ui_workaround_disabled_features', fn(array $disabled): array => [
+    ...$disabled, 'status-visibility',
+]);
 
 // Disable multiple features
-add_filter('wack_ui_workaround_disabled_features', function (array $disabled): array {
-    return [...$disabled, 'image-toolbar', 'image-sidebar', 'preview-button'];
-});
+add_filter('wack_ui_workaround_disabled_features', fn(array $disabled): array => [
+    ...$disabled, 'image-toolbar', 'image-sidebar', 'preview-button',
+]);
 ```
 
 **Parameters:**

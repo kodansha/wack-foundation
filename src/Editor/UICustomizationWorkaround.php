@@ -25,9 +25,9 @@ namespace WackFoundation\Editor;
  * Example — disable specific features:
  *
  * ```php
- * add_filter('wack_ui_workaround_disabled_features', function (array $disabled): array {
- *     return [...$disabled, 'status-visibility', 'preview-button'];
- * });
+ * add_filter('wack_ui_workaround_disabled_features', fn(array $disabled): array => [
+ *     ...$disabled, 'status-visibility', 'preview-button',
+ * ]);
  * ```
  *
  * Note: relies on WordPress internal CSS classes and DOM structure,
@@ -62,9 +62,9 @@ class UICustomizationWorkaround
      * are enqueued. To disable individual features:
      *
      * ```php
-     * add_filter('wack_ui_workaround_disabled_features', function (array $disabled): array {
-     *     return [...$disabled, 'status-visibility', 'preview-button'];
-     * });
+     * add_filter('wack_ui_workaround_disabled_features', fn(array $disabled): array => [
+     *     ...$disabled, 'status-visibility', 'preview-button',
+     * ]);
      * ```
      */
     public function __construct()
