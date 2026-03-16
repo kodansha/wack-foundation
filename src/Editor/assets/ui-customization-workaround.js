@@ -1,78 +1,263 @@
 /**
  * Block editor UI customization workaround
  *
- * Handles editor UI adjustments that cannot be achieved through standard
- * theme customization or parent theme features.
+ * All detection and conditional logic lives here. CSS only targets the
+ * custom `wack-ui-hidden` class that this script applies.
  *
- * [Heading / Separator / Image block toolbars]
- * - "Align": disabled via blocks.registerBlockType filter (supports.align = false)
- * - "Text alignment", "Bold", "Link": body class toggled via wp.data.subscribe;
- *   CSS targets those classes to hide the controls
+ * Per-feature flags are read from window.wackUiWorkaroundConfig, which is
+ * injected by PHP before this script loads. Each flag corresponds to a
+ * WordPress filter that child themes can use to disable specific features.
  *
- * [Preview / View button]
- * - Monitors post status via wp.data and sets data-custom-post-status on body.
- *   CSS selectors use this attribute to show/hide preview-related buttons per status.
+ * Features and their config keys:
+ * - headingToolbar    : hide "Text alignment", "Bold", "Link" in heading toolbar;
+ *                       disable "Align" support via blocks.registerBlockType filter
+ * - separatorToolbar  : disable "Align" support; hide button as fallback if needed
+ * - imageToolbar      : hide "Align", "Link", "Crop", "Add caption" group in toolbar;
+ *                       disable "Align" support via blocks.registerBlockType filter
+ * - imageSidebar      : hide "Settings" panel (alt text, aspect ratio, width, height…)
+ * - statusVisibility  : hide "Password protection" and "Stick to the top of the blog"
+ * - viewOptionsDevices: hide device selection (Desktop / Tablet / Mobile) in View Options
+ * - previewButton     : hide preview dropdown and/or View/Preview links by post status
  *
- * Note: relies on WordPress internal CSS classes and DOM structure,
+ * Note: aria-label selectors used to locate elements are Japanese locale strings.
+ * They will not match on non-Japanese WordPress installations.
+ * Relies on WordPress internal CSS classes and DOM structure,
  * so this may stop working after a WordPress version upgrade.
  * Verified on WordPress 6.9.3.
  */
 
-// Blocks for which the "Align" toolbar button is disabled
-const ALIGN_DISABLED_BLOCKS = ["core/heading", "core/separator", "core/image"];
+const config = window.wackUiWorkaroundConfig ?? {};
+const CLASS_HIDDEN = "wack-ui-hidden";
 
-wp.hooks.addFilter(
-  "blocks.registerBlockType",
-  "wack-foundation/ui-customization-workaround",
-  function (settings, name) {
-    if (!ALIGN_DISABLED_BLOCKS.includes(name)) {
-      return settings;
+// ============================================================
+// Block filter: disable "Align" support per block type
+// ============================================================
+
+const alignDisabledBlocks = [
+  config.headingToolbar && "core/heading",
+  config.separatorToolbar && "core/separator",
+  config.imageToolbar && "core/image",
+].filter(Boolean);
+
+if (alignDisabledBlocks.length > 0) {
+  wp.hooks.addFilter(
+    "blocks.registerBlockType",
+    "wack-foundation/ui-customization-workaround",
+    (settings, name) => {
+      if (!alignDisabledBlocks.includes(name)) return settings;
+      return { ...settings, supports: { ...settings.supports, align: false } };
+    },
+  );
+}
+
+// ============================================================
+// Block selection: mark toolbar and sidebar elements
+// ============================================================
+
+/**
+ * Add wack-ui-hidden to an element if not already hidden.
+ * Idempotent: classList.add is a no-op when the class is already present,
+ * so calling this repeatedly is safe.
+ *
+ * @param {Element|null|undefined} el
+ */
+function hide(el) {
+  el?.classList.add(CLASS_HIDDEN);
+}
+
+/**
+ * Remove wack-ui-hidden from an element.
+ * Called when a block is deselected to clean up any previously added classes,
+ * in case the element persists in the DOM (e.g. due to re-rendering).
+ *
+ * @param {Element|null|undefined} el
+ */
+function show(el) {
+  el?.classList.remove(CLASS_HIDDEN);
+}
+
+/**
+ * Mark or unmark heading toolbar controls.
+ * Targets "Text alignment" button and the "Bold / Link" group.
+ * Elements are located via aria-label (Japanese locale).
+ *
+ * @param {boolean} isSelected
+ */
+function applyHeadingToolbar(isSelected) {
+  const toolbar = document.querySelector(".block-editor-block-toolbar");
+
+  // "Text alignment" button (aria-label: Japanese)
+  const textAlignBtn = toolbar?.querySelector('[aria-label="テキストの配置"]');
+  isSelected ? hide(textAlignBtn) : show(textAlignBtn);
+
+  // "Bold / Link" group: locate via the bold button, then mark its parent group
+  const boldGroup = toolbar
+    ?.querySelector('[aria-label="太字"]')
+    ?.closest(".components-toolbar-group");
+  isSelected ? hide(boldGroup) : show(boldGroup);
+}
+
+/**
+ * Mark or unmark separator toolbar controls.
+ * Targets the "Align" group as a CSS fallback in case the block filter
+ * did not suppress the button.
+ *
+ * @param {boolean} isSelected
+ */
+function applySeparatorToolbar(isSelected) {
+  const toolbar = document.querySelector(".block-editor-block-toolbar");
+
+  // "Align" group (aria-label: Japanese) — fallback when JS filter has no effect
+  const alignGroup = toolbar
+    ?.querySelector('[aria-label="配置"]')
+    ?.closest(".components-toolbar-group");
+  isSelected ? hide(alignGroup) : show(alignGroup);
+}
+
+/**
+ * Mark or unmark image block toolbar and sidebar controls.
+ *
+ * Toolbar: "Align" is removed from DOM by the block filter, so "Crop"
+ * is used as the stable anchor to locate the group.
+ *
+ * Sidebar: "Settings" panel identified via the alt text textarea.
+ *
+ * @param {boolean} isSelected
+ */
+function applyImageElements(isSelected) {
+  const toolbar = document.querySelector(".block-editor-block-toolbar");
+  const inspector = document.querySelector(".block-editor-block-inspector");
+
+  if (config.imageToolbar) {
+    // "Crop" button (aria-label: Japanese) is always present after align is removed
+    const cropGroup = toolbar
+      ?.querySelector('[aria-label="切り抜き"]')
+      ?.closest(".components-toolbar-group");
+    isSelected ? hide(cropGroup) : show(cropGroup);
+  }
+
+  if (config.imageSidebar) {
+    // "Settings" panel: identified by the alt text textarea inside it
+    const settingsPanel = inspector
+      ?.querySelector(".components-textarea-control")
+      ?.closest(".components-tools-panel");
+    isSelected ? hide(settingsPanel) : show(settingsPanel);
+  }
+}
+
+// Subscribe to block selection changes and update toolbar/sidebar marks.
+// Tracked via prevBlockName to avoid redundant DOM work on unrelated store updates.
+// requestAnimationFrame defers DOM queries until React has committed the toolbar.
+let prevBlockName = null;
+let pendingRafId = null;
+
+wp.data.subscribe(() => {
+  const blockName =
+    wp.data.select("core/block-editor").getSelectedBlock()?.name ?? null;
+
+  if (blockName === prevBlockName) return;
+  prevBlockName = blockName;
+
+  cancelAnimationFrame(pendingRafId);
+  pendingRafId = requestAnimationFrame(() => {
+    if (config.headingToolbar) {
+      applyHeadingToolbar(blockName === "core/heading");
     }
-
-    return {
-      ...settings,
-      supports: {
-        ...settings.supports,
-        align: false,
-      },
-    };
-  },
-);
-
-// Toggle body classes on block selection to drive CSS-based control hiding
-wp.data.subscribe(function () {
-  const selectedBlock = wp.data.select("core/block-editor").getSelectedBlock();
-  document.body.classList.toggle(
-    "wack-heading-selected",
-    selectedBlock?.name === "core/heading",
-  );
-  document.body.classList.toggle(
-    "wack-separator-selected",
-    selectedBlock?.name === "core/separator",
-  );
-  document.body.classList.toggle(
-    "wack-image-selected",
-    selectedBlock?.name === "core/image",
-  );
+    if (config.separatorToolbar) {
+      applySeparatorToolbar(blockName === "core/separator");
+    }
+    if (config.imageToolbar || config.imageSidebar) {
+      applyImageElements(blockName === "core/image");
+    }
+  });
 });
 
-// Set data-custom-post-status on body to drive CSS-based preview button visibility
-wp.domReady(function () {
-  if (!wp.data || !wp.data.select("core/editor")) return;
+// ============================================================
+// DOM observation: mark popup and dropdown menu elements
+// ============================================================
 
-  const updatePostStatusAttribute = function () {
-    // Get the current post status (e.g. 'draft', 'publish', 'private')
+/**
+ * Mark Status & Visibility popup items and View Options devices group.
+ * These elements are only in the DOM when their respective popups are open,
+ * so a MutationObserver is used to catch them when they appear.
+ *
+ * The `:not(.wack-ui-hidden)` selector prevents triggering repeated mutations
+ * by only selecting elements that have not yet been hidden.
+ */
+function applyDynamicElements() {
+  if (config.statusVisibility) {
+    // "Password protection" fieldset
+    hide(
+      document.querySelector(
+        `.editor-change-status__password-fieldset:not(.${CLASS_HIDDEN})`,
+      ),
+    );
+
+    // "Stick to the top of the blog" checkbox control
+    hide(
+      document.querySelector(
+        `.editor-post-sticky__checkbox-control:not(.${CLASS_HIDDEN})`,
+      ),
+    );
+  }
+
+  if (config.viewOptionsDevices) {
+    // Device selection group inside the View Options dropdown.
+    // Anchored on .editor-preview-dropdown__button-external (language-independent).
+    const externalBtn = document.querySelector(
+      `.editor-preview-dropdown__button-external:not(.${CLASS_HIDDEN})`,
+    );
+    if (externalBtn) {
+      const radioGroup = externalBtn
+        .closest(".components-dropdown-menu__menu")
+        ?.querySelector('[role="menuitemradio"]')
+        ?.closest(".components-menu-group");
+      hide(radioGroup);
+    }
+  }
+}
+
+wp.domReady(() => {
+  applyDynamicElements();
+
+  // Observe the entire body for newly added nodes (popup, dropdown renders)
+  const observer = new MutationObserver(applyDynamicElements);
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+
+// ============================================================
+// Post status: show / hide preview dropdown and View/Preview links
+// ============================================================
+
+wp.domReady(() => {
+  if (!config.previewButton) return;
+  if (!wp.data?.select("core/editor")) return;
+
+  let prevStatus = null;
+
+  const applyPreviewButtonVisibility = () => {
     const status = wp.data
       .select("core/editor")
       .getCurrentPostAttribute("status");
-    if (status) {
-      // Reflect status as a data attribute on body for CSS targeting
-      document.body.setAttribute("data-custom-post-status", status);
-    }
+
+    if (status === prevStatus) return;
+    prevStatus = status;
+
+    // Published: hide the preview dropdown (device preview is irrelevant)
+    // Private:   hide both the preview dropdown and the View/Preview header links
+    const previewDropdown = document.querySelector(".editor-preview-dropdown");
+    previewDropdown?.classList.toggle(
+      CLASS_HIDDEN,
+      status === "publish" || status === "private",
+    );
+
+    document
+      .querySelectorAll(".editor-header__settings > a.components-button")
+      .forEach((link) => {
+        link.classList.toggle(CLASS_HIDDEN, status === "private");
+      });
   };
 
-  updatePostStatusAttribute();
-
-  // Watch for status changes continuously
-  wp.data.subscribe(updatePostStatusAttribute);
+  applyPreviewButtonVisibility();
+  wp.data.subscribe(applyPreviewButtonVisibility);
 });

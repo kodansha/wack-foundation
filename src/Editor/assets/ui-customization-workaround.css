@@ -1,113 +1,18 @@
 /**
  * Block editor UI customization workaround
  *
- * Body classes (.wack-*-selected) are toggled by the companion JS file via
- * wp.data.subscribe. data-custom-post-status is set by the JS file via wp.domReady.
- * Toolbar groups are hidden as a whole to avoid leaving orphaned separators.
+ * This stylesheet only defines the utility class used by the companion JS file.
+ * All element selection and conditional logic is handled in JS; CSS has no
+ * dependency on WordPress internal class names or DOM structure.
  *
- * [Heading block toolbar]
- * - "Text alignment": single button hidden (other buttons remain in the group)
- * - "Bold", "Link": entire group hidden
+ * The companion JS applies `.wack-ui-hidden` to specific elements based on
+ * block selection state, post status, and per-feature config flags provided
+ * by PHP. See `ui-customization-workaround.js` for details.
  *
- * [Separator block toolbar]
- * - "Align": entire group hidden (CSS fallback for when JS filter has no effect)
- *
- * [Image block toolbar]
- * - "Align", "Link", "Crop", "Add caption": entire group hidden
- *   Since "Align" is removed from DOM by the JS filter, "Crop" is used as the anchor
- *
- * [Image block sidebar]
- * - "Settings" panel (alt text, aspect ratio, width, height, resolution): hidden
- *
- * [Status & Visibility popup]
- * - "Password protection", "Stick to the top of the blog": hidden
- *   Uses !important to override Gutenberg's components-flex display: flex
- *
- * [View Options menu]
- * - Device selection group (Desktop / Tablet / Mobile): hidden
- *   Anchored on .editor-preview-dropdown__button-external (language-independent)
- *
- * [Preview / View button]
- * - Published: monitor icon (preview dropdown) hidden
- * - Private: monitor icon and View/Preview header links hidden
- *
- * Note: aria-label selectors in this file target Japanese locale strings.
- * They will not match on non-Japanese WordPress installations.
- * Relies on WordPress internal CSS classes and DOM structure,
- * so rules may stop working after a WordPress version upgrade.
- * Verified on WordPress 6.9.3.
+ * `!important` is required to override `display: flex` set inline by some
+ * Gutenberg components (e.g. components-flex).
  */
 
-/* ==============================================================
-   Heading block: hide "Text alignment" button
-   ============================================================== */
-body.wack-heading-selected [aria-label="テキストの配置"] {
-  display: none;
-}
-
-/* ==============================================================
-   Heading block: hide "Bold" and "Link" group
-   ============================================================== */
-body.wack-heading-selected .components-toolbar-group:has([aria-label="太字"]) {
-  display: none;
-}
-
-/* ==============================================================
-   Separator block: hide "Align" group (CSS fallback)
-   ============================================================== */
-body.wack-separator-selected
-  .components-toolbar-group:has([aria-label="配置"]) {
-  display: none;
-}
-
-/* ==============================================================
-   Image block: hide "Align", "Link", "Crop", "Add caption" group
-   "Align" is removed from DOM by JS filter; anchor on "Crop"
-   ============================================================== */
-body.wack-image-selected
-  .components-toolbar-group:has([aria-label="切り抜き"]) {
-  display: none;
-}
-
-/* ==============================================================
-   Image block sidebar: hide "Settings" panel
-   (alt text, aspect ratio, width, height, resolution)
-   ============================================================== */
-body.wack-image-selected
-  .components-tools-panel:has(.components-textarea-control) {
-  display: none;
-}
-
-/* ==============================================================
-   Status & Visibility: hide "Password protection" and "Stick to top"
-   !important overrides Gutenberg's components-flex display: flex
-   ============================================================== */
-.editor-change-status__password-fieldset,
-.editor-post-sticky__checkbox-control {
-  display: none !important;
-}
-
-/* ==============================================================
-   View Options menu: hide device selection group
-   ============================================================== */
-.components-dropdown-menu__menu:has(.editor-preview-dropdown__button-external)
-  .components-menu-group:has([role="menuitemradio"]) {
-  display: none;
-}
-
-/* ==============================================================
-   Published: hide monitor icon (preview dropdown)
-   ============================================================== */
-body[data-custom-post-status="publish"] .editor-preview-dropdown {
-  display: none !important;
-}
-
-/* ==============================================================
-   Private: hide monitor icon and View/Preview header links
-   ============================================================== */
-body[data-custom-post-status="private"] .editor-preview-dropdown,
-body[data-custom-post-status="private"]
-  .editor-header__settings
-  > a.components-button {
+.wack-ui-hidden {
   display: none !important;
 }
