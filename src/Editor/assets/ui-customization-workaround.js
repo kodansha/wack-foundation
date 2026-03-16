@@ -158,7 +158,7 @@ wp.data.subscribe(() => {
   if (blockName === prevBlockName) return;
   prevBlockName = blockName;
 
-  cancelAnimationFrame(pendingRafId);
+  if (pendingRafId !== null) cancelAnimationFrame(pendingRafId);
   pendingRafId = requestAnimationFrame(() => {
     if (config["heading-toolbar"]) {
       applyHeadingToolbar(blockName === "core/heading");
