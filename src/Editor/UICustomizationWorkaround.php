@@ -12,21 +12,21 @@ namespace WackFoundation\Editor;
  * filter. When all features are disabled, no assets are enqueued.
  *
  * Available feature keys:
- * - headingToolbar    : hide "Text alignment", "Bold", "Link" in heading toolbar;
- *                       disable "Align" button support
- * - separatorToolbar  : disable "Align" button support; hide as fallback if needed
- * - imageToolbar      : hide "Align", "Link", "Crop", "Add caption" group in toolbar;
- *                       disable "Align" button support
- * - imageSidebar      : hide "Settings" panel (alt text, aspect ratio, width, height…)
- * - statusVisibility  : hide "Password protection" and "Stick to the top of the blog"
- * - viewOptionsDevices: hide device selection (Desktop / Tablet / Mobile)
- * - previewButton     : hide preview dropdown and View/Preview links by post status
+ * - heading-toolbar    : hide "Text alignment", "Bold", "Link" in heading toolbar;
+ *                        disable "Align" button support
+ * - separator-toolbar  : disable "Align" button support; hide as fallback if needed
+ * - image-toolbar      : hide "Align", "Link", "Crop", "Add caption" group in toolbar;
+ *                        disable "Align" button support
+ * - image-sidebar      : hide "Settings" panel (alt text, aspect ratio, width, height…)
+ * - status-visibility  : hide "Password protection" and "Stick to the top of the blog"
+ * - view-options-devices: hide device selection (Desktop / Tablet / Mobile)
+ * - preview-button     : hide preview dropdown and View/Preview links by post status
  *
  * Example — disable specific features:
  *
  * ```php
  * add_filter('wack_ui_workaround_disabled_features', function (array $disabled): array {
- *     return [...$disabled, 'statusVisibility', 'previewButton'];
+ *     return [...$disabled, 'status-visibility', 'preview-button'];
  * });
  * ```
  *
@@ -46,13 +46,13 @@ class UICustomizationWorkaround
 
     /** @var string[] All available feature keys */
     private const array ALL_FEATURES = [
-        'headingToolbar',
-        'separatorToolbar',
-        'imageToolbar',
-        'imageSidebar',
-        'statusVisibility',
-        'viewOptionsDevices',
-        'previewButton',
+        'heading-toolbar',
+        'separator-toolbar',
+        'image-toolbar',
+        'image-sidebar',
+        'status-visibility',
+        'view-options-devices',
+        'preview-button',
     ];
 
     /**
@@ -63,7 +63,7 @@ class UICustomizationWorkaround
      *
      * ```php
      * add_filter('wack_ui_workaround_disabled_features', function (array $disabled): array {
-     *     return [...$disabled, 'statusVisibility', 'previewButton'];
+     *     return [...$disabled, 'status-visibility', 'preview-button'];
      * });
      * ```
      */

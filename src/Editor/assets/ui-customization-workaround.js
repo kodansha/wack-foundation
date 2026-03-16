@@ -9,15 +9,15 @@
  * WordPress filter that child themes can use to disable specific features.
  *
  * Features and their config keys:
- * - headingToolbar    : hide "Text alignment", "Bold", "Link" in heading toolbar;
- *                       disable "Align" support via blocks.registerBlockType filter
- * - separatorToolbar  : disable "Align" support; hide button as fallback if needed
- * - imageToolbar      : hide "Align", "Link", "Crop", "Add caption" group in toolbar;
- *                       disable "Align" support via blocks.registerBlockType filter
- * - imageSidebar      : hide "Settings" panel (alt text, aspect ratio, width, height…)
- * - statusVisibility  : hide "Password protection" and "Stick to the top of the blog"
- * - viewOptionsDevices: hide device selection (Desktop / Tablet / Mobile) in View Options
- * - previewButton     : hide preview dropdown and/or View/Preview links by post status
+ * - heading-toolbar    : hide "Text alignment", "Bold", "Link" in heading toolbar;
+ *                        disable "Align" support via blocks.registerBlockType filter
+ * - separator-toolbar  : disable "Align" support; hide button as fallback if needed
+ * - image-toolbar      : hide "Align", "Link", "Crop", "Add caption" group in toolbar;
+ *                        disable "Align" support via blocks.registerBlockType filter
+ * - image-sidebar      : hide "Settings" panel (alt text, aspect ratio, width, height…)
+ * - status-visibility  : hide "Password protection" and "Stick to the top of the blog"
+ * - view-options-devices: hide device selection (Desktop / Tablet / Mobile) in View Options
+ * - preview-button     : hide preview dropdown and/or View/Preview links by post status
  *
  * Note: aria-label selectors used to locate elements are Japanese locale strings.
  * They will not match on non-Japanese WordPress installations.
@@ -34,9 +34,9 @@ const CLASS_HIDDEN = "wack-ui-hidden";
 // ============================================================
 
 const alignDisabledBlocks = [
-  config.headingToolbar && "core/heading",
-  config.separatorToolbar && "core/separator",
-  config.imageToolbar && "core/image",
+  config["heading-toolbar"] && "core/heading",
+  config["separator-toolbar"] && "core/separator",
+  config["image-toolbar"] && "core/image",
 ].filter(Boolean);
 
 if (alignDisabledBlocks.length > 0) {
@@ -128,7 +128,7 @@ function applyImageElements(isSelected) {
   const toolbar = document.querySelector(".block-editor-block-toolbar");
   const inspector = document.querySelector(".block-editor-block-inspector");
 
-  if (config.imageToolbar) {
+  if (config["image-toolbar"]) {
     // "Crop" button (aria-label: Japanese) is always present after align is removed
     const cropGroup = toolbar
       ?.querySelector('[aria-label="切り抜き"]')
@@ -136,7 +136,7 @@ function applyImageElements(isSelected) {
     isSelected ? hide(cropGroup) : show(cropGroup);
   }
 
-  if (config.imageSidebar) {
+  if (config["image-sidebar"]) {
     // "Settings" panel: identified by the alt text textarea inside it
     const settingsPanel = inspector
       ?.querySelector(".components-textarea-control")
@@ -160,13 +160,13 @@ wp.data.subscribe(() => {
 
   cancelAnimationFrame(pendingRafId);
   pendingRafId = requestAnimationFrame(() => {
-    if (config.headingToolbar) {
+    if (config["heading-toolbar"]) {
       applyHeadingToolbar(blockName === "core/heading");
     }
-    if (config.separatorToolbar) {
+    if (config["separator-toolbar"]) {
       applySeparatorToolbar(blockName === "core/separator");
     }
-    if (config.imageToolbar || config.imageSidebar) {
+    if (config["image-toolbar"] || config["image-sidebar"]) {
       applyImageElements(blockName === "core/image");
     }
   });
@@ -185,7 +185,7 @@ wp.data.subscribe(() => {
  * by only selecting elements that have not yet been hidden.
  */
 function applyDynamicElements() {
-  if (config.statusVisibility) {
+  if (config["status-visibility"]) {
     // "Password protection" fieldset
     hide(
       document.querySelector(
@@ -201,7 +201,7 @@ function applyDynamicElements() {
     );
   }
 
-  if (config.viewOptionsDevices) {
+  if (config["view-options-devices"]) {
     // Device selection group inside the View Options dropdown.
     // Anchored on .editor-preview-dropdown__button-external (language-independent).
     const externalBtn = document.querySelector(
@@ -230,7 +230,7 @@ wp.domReady(() => {
 // ============================================================
 
 wp.domReady(() => {
-  if (!config.previewButton) return;
+  if (!config["preview-button"]) return;
   if (!wp.data?.select("core/editor")) return;
 
   let prevStatus = null;
