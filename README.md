@@ -20,8 +20,11 @@
     - [Editor](#editor)
       - [Block Type Controller](#block-type-controller)
         - [`wack_block_type_enabled_types`](#wack_block_type_enabled_types)
+        - [`wack_block_type_heading_level_options`](#wack_block_type_heading_level_options)
       - [Block Style Manager](#block-style-manager)
         - [`wack_block_style_enabled_styles`](#wack_block_style_enabled_styles)
+      - [Block Supports Controller](#block-supports-controller)
+        - [`wack_block_supports_enabled_supports`](#wack_block_supports_enabled_supports)
       - [Format Controller](#format-controller)
         - [`wack_text_format_enabled_types`](#wack_text_format_enabled_types)
       - [Link Suggestion Disabler](#link-suggestion-disabler)
@@ -430,6 +433,74 @@ foreach ($registry->get_all_registered() as $block) {
 ```
 Secondary (browser console quick lookup):
 `wp.blocks.getBlockTypes().filter(b => b.styles?.length).map(b => ({block: b.name, styles: b.styles}))`
+
+---
+
+#### Block Supports Controller
+
+Controls which block supports are available per block in the block editor. Block supports are the features that blocks expose in the editor UI, such as alignment, borders, colors, and typography controls.
+
+**Default behavior:**
+- No blocks are affected (the filter returns an empty array by default, leaving all blocks unchanged)
+- Use the filter to specify which top-level support keys should remain enabled per block
+- Only blocks explicitly listed in the filter are affected; all other blocks remain unchanged
+
+**Design notes:**
+- **Whitelist scope:** Unlike Block Style Manager (which affects all registered blocks), this class only modifies blocks explicitly listed in the filter. This prevents unintended disruption of unrelated blocks.
+- **Top-level keys only:** Only top-level support keys are controlled (e.g., `color`, `typography`). Support keys whose values are objects (e.g., `color: { gradient: true }`) will be disabled entirely when their top-level key is omitted. For granular control of nested support properties (e.g., enabling `color` but disabling gradients), use an additional `blocks.registerBlockType` filter directly in JavaScript.
+
+**Filter:**
+
+##### `wack_block_supports_enabled_supports`
+
+Specify which top-level support keys should remain enabled for each block. Support keys not listed for a given block will be set to `false`.
+
+```php
+<?php
+add_filter('wack_block_supports_enabled_supports', fn() => [
+    'core/buttons' => [
+        'anchor',
+        '__experimentalExposeControlsToChildren',
+        'color',
+        'spacing',
+        'typography',
+        '__experimentalBorder',
+        'layout',
+        'interactivity',
+        'contentRole',
+        // 'align' is intentionally omitted to disable wide/full alignment
+    ],
+    'core/button' => [
+        'anchor',
+        'splitting',
+        'color',
+        'typography',
+        'shadow',
+        'spacing',
+        'interactivity',
+        // '__experimentalBorder' is intentionally omitted to disable the border panel
+    ],
+]);
+```
+
+**Parameters:**
+- `array<string, string[]> $supports` - Associative array mapping block names to arrays of enabled top-level support key strings
+
+**Default:** `[]` (no blocks affected; all blocks remain unchanged)
+
+**Block supports reference:**
+
+Primary (PHP – suitable for CLI, diagnostics, CI):
+```php
+$block = \WP_Block_Type_Registry::get_instance()->get_registered('core/button');
+$non_false = array_keys(array_filter(
+    $block->supports ?? [],
+    fn($v) => $v !== false && $v !== null,
+));
+// e.g., ['anchor', 'splitting', 'color', 'typography', ...]
+```
+Secondary (browser console quick check):
+`wp.blocks.getBlockTypes().map(b => ({ block: b.name, supports: Object.keys(b.supports ?? {}).filter(k => b.supports[k] !== false) }))`
 
 ---
 
