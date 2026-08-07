@@ -237,6 +237,145 @@ Completely disables comments and trackbacks functionality for headless WordPress
 
 ---
 
+### Cron
+
+#### Cron Schedule Logger
+
+Logs the state of the WP-Cron schedule immediately before and after a cron run, so that intermittent "the scheduled job did not run as expected" problems can be diagnosed after the fact.
+
+**Disabled by default.** It is a diagnostic aid, not something to leave running permanently.
+
+##### Enabling
+
+```php
+add_filter('wack_cron_log_enabled', '__return_true');
+```
+
+This is the only setting. Everything else (output format, event limits, log levels) is fixed.
+
+##### Where the logs go
+
+Output is written through the [WACK Log](https://packagist.org/packages/kodansha/wack-log) plugin when it is active, so logs are emitted to stdout and picked up by container log collectors. When the plugin is not active, output falls back to `error_log()` and lands in the regular WordPress debug log. No configuration is needed either way.
+
+##### What gets logged
+
+A cron run **with no due event produces no output at all**. Only runs that actually have work to do are logged, and each produces exactly **two lines**, plus one line per rescheduling error:
+
+| Line | When | Contents |
+| --- | --- | --- |
+| `start` | Before any event is processed | Environment, cron lock, registered schedules, and every scheduled event |
+| `end` | After the run finishes | Per job timings, every scheduled event after the run, and a diff against `start` |
+
+Both lines are single line JSON prefixed with `[wack-foundation][cron]`, and share a `run` field so they can be correlated.
+
+The `start` line is written as early as possible rather than being buffered, so the schedule is on record even if the process is killed mid run.
+
+##### Event fields
+
+Both lines carry an `events` array listing **every scheduled event, overdue and future alike**.
+
+| Field | Meaning |
+| --- | --- |
+| `hook` | Hook name |
+| `args` | First 8 characters of the md5 hash of the event arguments. Argument **values are never logged** |
+| `at` | Scheduled run time (ISO 8601, UTC) |
+| `delta_sec` | Scheduled time minus current time. **Negative means overdue** |
+| `due` | Whether this event is a target of the current run |
+| `sched` | Recurrence name such as `hourly`, or `false` for a one-off event |
+| `interval` | Recurrence interval in seconds, or `null` for a one-off event |
+| `cb` | Whether the hook has a callback registered. **`false` means an orphaned event** |
+
+Events are ordered by scheduled time and capped at 50. Overdue events therefore always survive the cap, and any omission is reported explicitly in `counts.truncated`.
+
+##### Line specific fields
+
+`start`:
+
+| Field | Meaning |
+| --- | --- |
+| `env` | `disable_wp_cron`, `alternate_wp_cron`, `lock_timeout`, `cli`, `tz` |
+| `lock` | Value of the `doing_cron` transient at the start of the run |
+| `schedules` | Registered recurrence names and their intervals. An event whose `sched` is missing here cannot be rescheduled |
+| `counts` | `total` / `due` / `truncated` |
+
+`end`:
+
+| Field | Meaning |
+| --- | --- |
+| `elapsed_ms` | Duration of the whole run |
+| `jobs` | Per event `hook`, `args`, `ms`, and `done`. **`done: false` means the process died while that event was running** |
+| `diff.gone` | Events that disappeared during the run |
+| `diff.rescheduled` | Events that were rescheduled, with their new time |
+| `diff.still_due` | Events that were due and are still due, meaning they never ran |
+| `diff.added` | Events registered during the run |
+| `lock` | Value of the `doing_cron` transient at the end. A change means another process stole the lock |
+| `counts` | `total` / `due` / `truncated` |
+
+##### Warnings
+
+A line that detects an anomaly carries a `warn` array and is logged at **warning** level instead of info, so monitoring can alert on warnings alone.
+
+| Label | Meaning |
+| --- | --- |
+| `orphan:<hook>` | A due event whose hook has no callback registered |
+| `unknown_schedule:<name>` | An event references a recurrence that is not registered |
+| `incomplete:<hook>` | Execution of that event never completed |
+| `not_run:<hook>` | The event was due but was not processed |
+| `lock_stolen` | The cron lock changed during the run |
+
+Failures reported by WordPress itself through `cron_reschedule_event_error` and `cron_unschedule_event_error` are logged separately at error level. There are no such lines during a healthy run.
+
+##### Example
+
+```
+[wack-foundation][cron] {"event":"start","run":"1754539201.123456","time":"2026-08-07T02:00:01Z",
+ "env":{"disable_wp_cron":true,"alternate_wp_cron":false,"lock_timeout":60,"cli":false,"tz":"Asia/Tokyo"},
+ "lock":"1754539201.123456","schedules":{"hourly":3600,"twicedaily":43200,"daily":86400,"weekly":604800},
+ "events":[
+   {"hook":"my_orphan_hook","args":"e5f6a7b8","at":"2026-08-06T02:00:00Z","delta_sec":-86401,"due":true,"sched":"hourly","interval":3600,"cb":false},
+   {"hook":"wp_version_check","args":"a1b2c3d4","at":"2026-08-07T01:59:49Z","delta_sec":-12,"due":true,"sched":"twicedaily","interval":43200,"cb":true}
+ ],
+ "counts":{"total":2,"due":2,"truncated":0},"warn":["orphan:my_orphan_hook"]}
+```
+
+```
+[wack-foundation][cron] {"event":"end","run":"1754539201.123456","time":"2026-08-07T02:00:02Z","elapsed_ms":1840,
+ "jobs":[
+   {"hook":"my_orphan_hook","args":"e5f6a7b8","ms":0,"done":true},
+   {"hook":"wp_version_check","args":"a1b2c3d4","ms":1802,"done":true}
+ ],
+ "events":[
+   {"hook":"my_orphan_hook","args":"e5f6a7b8","at":"2026-08-07T03:00:00Z","delta_sec":3598,"due":false,"sched":"hourly","interval":3600,"cb":false},
+   {"hook":"wp_version_check","args":"a1b2c3d4","at":"2026-08-07T13:59:49Z","delta_sec":43187,"due":false,"sched":"twicedaily","interval":43200,"cb":true}
+ ],
+ "diff":{"gone":[],"rescheduled":[{"hook":"wp_version_check","args":"a1b2c3d4","at":"2026-08-07T13:59:49Z"}],"still_due":[],"added":[]},
+ "lock":"1754539201.123456","counts":{"total":2,"due":0,"truncated":0},"warn":["orphan:my_orphan_hook"]}
+```
+
+Here `my_orphan_hook` becomes due every hour, does nothing (`cb: false`, `ms: 0`), and is rescheduled again, which is visible from the `start` line alone.
+
+##### Expected volume
+
+Because empty runs are silent, the number of lines tracks the work performed rather than how often WP-Cron is polled. This matters when `DISABLE_WP_CRON` is combined with a system crontab that hits `wp-cron.php` every minute: the roughly 1400 daily no-op requests produce nothing.
+
+| Site | Runs with work per day | Lines per day |
+| --- | --- | --- |
+| Stock WordPress | 25 to 40 | 50 to 80 |
+| A plugin scheduling a per-minute event | 1440 | 2880 |
+
+At roughly 2 KB per line that is about 100 to 160 KB per day for a stock site. A site with per-minute events reaches several MB per day, so turn the filter back off once the investigation is finished.
+
+##### Notes
+
+- Argument values are never written out. Only the hash WordPress itself uses as the cron array key is logged.
+- All work is wrapped in a guard. A failure inside the logger cannot break the cron run it observes.
+- The logger only reads state. It performs no option, transient, or database writes.
+- The `end` line is still written when WP-Cron bails out early after losing the lock, and when a callback triggers a fatal error, because WordPress registers `shutdown` as a PHP shutdown function. It is not written if the process is killed outright, which is why `start` is written eagerly.
+- Under WP-CLI (`wp cron event run`), `DOING_CRON` is not defined until the command runs, so the `start` line is deferred until the first event executes.
+- Events are bracketed at priority `PHP_INT_MIN` and `PHP_INT_MAX`. A callback registered while its own hook is already running would fall outside the measurement.
+
+---
+
 ### Dashboard
 
 #### Dashboard Disabler

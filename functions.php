@@ -2,6 +2,7 @@
 
 use WackFoundation\Appearance\AdminFavicon;
 use WackFoundation\Comment\CommentDisabler;
+use WackFoundation\Cron\CronScheduleLogger;
 use WackFoundation\Dashboard\DashboardDisabler;
 use WackFoundation\Editor\BlockStyle;
 use WackFoundation\Editor\BlockType;
@@ -65,3 +66,8 @@ new AdminFavicon();
 // Health Check
 //==============================================================================
 new HealthCheckEndpoint();
+
+//==============================================================================
+// Cron
+//==============================================================================
+new CronScheduleLogger();
