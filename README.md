@@ -34,6 +34,10 @@
         - [`wack_quick_edit_enabled_post_types`](#wack_quick_edit_enabled_post_types)
       - [UI Customization Workaround](#ui-customization-workaround)
         - [`wack_ui_workaround_disabled_features`](#wack_ui_workaround_disabled_features)
+      - [Block Pattern Disabler](#block-pattern-disabler)
+        - [`wack_block_pattern_disabled`](#wack_block_pattern_disabled)
+      - [Openverse Disabler](#openverse-disabler)
+        - [`wack_openverse_disabled`](#wack_openverse_disabled)
     - [Media](#media)
       - [Image Size Control](#image-size-control)
         - [`wack_image_size_control_custom_sizes`](#wack_image_size_control_custom_sizes)
@@ -756,6 +760,93 @@ add_filter('wack_ui_workaround_disabled_features', fn(array $disabled): array =>
 - When all features are disabled, no assets are enqueued
 
 > **Note:** Some element selectors rely on Japanese locale `aria-label` strings and will not match on non-Japanese WordPress installations. The implementation also relies on WordPress internal CSS classes and DOM structure; adjustments may stop working after a WordPress core upgrade. Verified on WordPress 6.9.3.
+
+---
+
+#### Block Pattern Disabler
+
+Removes block patterns from the block editor. Pattern registration is stopped on the server side, and the "Patterns" tab of the block inserter is hidden.
+
+**Default behavior:**
+- All block patterns are **disabled by default**
+- The "Patterns" tab is hidden in the block inserter
+- No pattern is offered in the slash (`/`) inserter or in block placeholders
+
+**Why disable block patterns?**
+Patterns insert predefined markup that usually contains block types outside the allowed list (see [Block Type Controller](#block-type-controller)). In a headless setup the frontend renders only a curated set of blocks, so a pattern inserted by an editor easily produces content the frontend cannot render. Patterns from the wordpress.org pattern directory are fetched from an external service as well, so their markup cannot be reviewed in advance.
+
+**What is stopped:**
+
+| Hook | Patterns it covers |
+|---|---|
+| `after_setup_theme` (`remove_theme_support('core-block-patterns')`) | Patterns bundled with WordPress core (`core/query-*`, `core/navigation-overlay-*`), plus the core and featured patterns of the pattern directory, which are only loaded while this theme support is present |
+| `should_load_remote_block_patterns` filter | Any remaining remote patterns from the wordpress.org pattern directory |
+| `init` (priority `PHP_INT_MAX`) | Patterns registered by themes (`patterns/` directory) and plugins |
+| `enqueue_block_editor_assets` | Stylesheet that hides the "Patterns" tab in the inserter |
+
+**Filter:**
+
+##### `wack_block_pattern_disabled`
+
+Control whether block patterns should be disabled.
+
+```php
+<?php
+// Keep block patterns enabled
+add_filter('wack_block_pattern_disabled', fn() => false);
+
+// Explicitly disable (default behavior, no filter needed)
+add_filter('wack_block_pattern_disabled', fn() => true);
+```
+
+**Parameters:**
+- `bool $disabled` - Whether to disable block patterns
+
+**Default:** `true` (patterns disabled)
+
+**Technical implementation:**
+Patterns reach the editor through the REST endpoint `wp/v2/block-patterns/patterns`, which reads the pattern registry at request time and loads remote patterns lazily. Hiding the UI is therefore not enough on its own: registration itself has to be stopped. WordPress core builds the inserter tabs from a fixed list, so the "Patterns" tab stays visible even when no pattern is registered, and user patterns (`wp_block` posts) are fetched separately via REST. The stylesheet hides the tab button by matching the tab id suffix (`.block-editor-tabbed-sidebar__tab[id$="-patterns"]`), which leaves the "Blocks" and "Media" tabs untouched.
+
+> **Note:** Hiding the tab relies on WordPress internal CSS classes and DOM structure, so it may stop working after a WordPress core upgrade. Verified on WordPress 7.1.
+
+---
+
+#### Openverse Disabler
+
+Removes the "Openverse" category from the "Media" tab of the block inserter.
+
+**Default behavior:**
+- Openverse is **disabled by default**
+- The other categories of the "Media" tab (media library entries) stay available
+
+**Why disable Openverse?**
+Openverse lets editors search openly licensed media on an external service (`api.openverse.org`) from within the inserter. On insertion, WordPress downloads the file and side-loads it into the media library with a generated attribution caption; when that fails, it offers to insert the image as an external URL instead — which the provider can remove without warning, as the core dialog itself points out. For an editorial workflow where every asset and its licensing is reviewed before publication, neither outcome is desirable.
+
+**Filter:**
+
+##### `wack_openverse_disabled`
+
+Control whether the Openverse media category should be disabled.
+
+```php
+<?php
+// Enable Openverse
+add_filter('wack_openverse_disabled', fn() => false);
+
+// Explicitly disable (default behavior, no filter needed)
+add_filter('wack_openverse_disabled', fn() => true);
+```
+
+**Parameters:**
+- `bool $disabled` - Whether to disable the Openverse media category
+
+**Default:** `true` (Openverse disabled)
+
+**Technical implementation:**
+The `block_editor_settings_all` filter sets the `enableOpenverseMediaCategory` block editor setting to `false`. The block editor drops the `openverse` inserter media category whenever that setting is disabled, so no DOM-dependent workaround is needed and the feature is unaffected by WordPress upgrades.
+
+**Reference:**
+https://developer.wordpress.org/block-editor/reference-guides/filters/editor-filters/
 
 ---
 
