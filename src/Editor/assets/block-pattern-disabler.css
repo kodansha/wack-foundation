@@ -1,0 +1,20 @@
+/**
+ * Hide the "Patterns" tab in the block inserter
+ *
+ * Pattern registration is stopped server-side by BlockPatternDisabler, but
+ * WordPress core renders the inserter tabs from a fixed list and keeps showing
+ * an empty "Patterns" tab. User patterns (wp_block posts) are also fetched
+ * separately via REST, so the tab itself is hidden.
+ *
+ * The tab button id is generated as `${instanceId}-${tabId}` by the Tabs
+ * component of @wordpress/components, so a suffix match targets the "Patterns"
+ * tab only and leaves the "Blocks" and "Media" tabs untouched.
+ *
+ * Note: relies on WordPress internal CSS classes and DOM structure,
+ * so this may stop working after a WordPress version upgrade.
+ * Verified on WordPress 7.1.
+ */
+
+.block-editor-tabbed-sidebar__tab[id$="-patterns"] {
+  display: none !important;
+}

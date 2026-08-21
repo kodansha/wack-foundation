@@ -3,12 +3,14 @@
 use WackFoundation\Appearance\AdminFavicon;
 use WackFoundation\Comment\CommentDisabler;
 use WackFoundation\Dashboard\DashboardDisabler;
+use WackFoundation\Editor\BlockPatternDisabler;
 use WackFoundation\Editor\BlockStyle;
 use WackFoundation\Editor\BlockType;
 use WackFoundation\Editor\BlockVariation;
 use WackFoundation\Editor\ContentEditorDisabler;
 use WackFoundation\Editor\Format;
 use WackFoundation\Editor\LinkSuggestionDisabler;
+use WackFoundation\Editor\OpenverseDisabler;
 use WackFoundation\Editor\QuickEditDisabler;
 use WackFoundation\Editor\UICustomizationWorkaround;
 use WackFoundation\HealthCheck\HealthCheckEndpoint;
@@ -31,6 +33,8 @@ new Format();
 new LinkSuggestionDisabler();
 new BlockStyle();
 new BlockType();
+new BlockPatternDisabler();
+new OpenverseDisabler();
 new QuickEditDisabler();
 new UICustomizationWorkaround();
 
