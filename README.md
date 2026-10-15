@@ -1086,10 +1086,13 @@ Provides a lightweight health check endpoint at `/healthcheck` for load balancer
 **Endpoint:** `/healthcheck`
 
 **Behavior:**
+- Handled on the WordPress `parse_request` hook, confirming that PHP and the normal WordPress bootstrap have completed
 - Returns HTTP 200 status code
-- Verifies database connectivity by executing a query
+- Calls `get_option('blogname')` as a lightweight database read
 - Outputs plain text response: `OK`
 - No authentication required (designed for infrastructure health checks)
+
+> **Note:** `get_option()` may return a value from the object cache, so it does not always verify the current database connection. Use `$wpdb->check_connection(false)` when a live database connectivity check is required.
 
 **Response format:**
 ```
@@ -1107,6 +1110,14 @@ OK
 - Database connectivity is verified but details are not disclosed
 - Public access is intentional (required for load balancer health checks)
 - Consider implementing IP restrictions at the infrastructure layer (WAF, ALB) if needed
+
+**Multisite limitations:**
+
+On multisite, WordPress identifies the current site from the request `Host` header before loading the theme. ALB health checks set the `Host` header to the target's private IP address, which does not match a registered domain, so WordPress redirects the request to the network URL with a `302` response. The request never reaches `parse_request`, and this endpoint cannot return `200`. A mu-plugin cannot work around this either, because mu-plugins are also loaded after WordPress has identified the current site.
+
+- Use this endpoint on a single-site installation, or when the monitoring request sends a `Host` header that matches a domain registered in WordPress.
+- For a host-independent health check on multisite, define the `SUNRISE` constant and handle the request in `WP_CONTENT_DIR/sunrise.php`. WordPress loads `sunrise.php` after initializing `$wpdb` but before identifying the current site from the `Host` header, so the drop-in can call `$wpdb->check_connection(false)` and return `200` on success or `503` on failure.
+- Treating `302` as healthy in the ALB configuration does not guarantee that this handler ran, and should not be used as a permanent solution.
 
 **No filters available** - The health check endpoint is always available at `/healthcheck`. To disable it, remove the `HealthCheckEndpoint` instantiation from `functions.php`.
 
