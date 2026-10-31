@@ -23,9 +23,11 @@ namespace WackFoundation\HealthCheck;
  * the connection succeeds or 503 when it fails.
  *
  * Treating 302 as healthy in the ALB configuration does not guarantee that this
- * handler ran and should not be used as a permanent solution. Use this class on a
- * single-site installation or when the monitoring request uses a Host header that
- * matches a domain registered in WordPress.
+ * handler ran and should not be used as a permanent solution.
+ *
+ * This endpoint is disabled on multisite, i.e. when `is_multisite()` returns true
+ * (`MULTISITE` is true, or `SUNRISE` is defined while `MULTISITE` is not defined).
+ * Handle `/healthcheck` in `sunrise.php` instead.
  *
  * `get_option()` may return a value from the object cache, so it does not always verify
  * the current database connection. Use `$wpdb->check_connection(false)` when a live
@@ -37,9 +39,14 @@ class HealthCheckEndpoint
      * Constructor
      *
      * Registers the health check handler to WordPress hooks.
+     * Does nothing on multisite, where `/healthcheck` should be handled in `sunrise.php`.
      */
     public function __construct()
     {
+        if (is_multisite()) {
+            return;
+        }
+
         add_action('parse_request', [$this, 'handleHealthCheck']);
     }
 
