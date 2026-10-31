@@ -25,9 +25,9 @@ namespace WackFoundation\HealthCheck;
  * Treating 302 as healthy in the ALB configuration does not guarantee that this
  * handler ran and should not be used as a permanent solution.
  *
- * This endpoint is disabled on multisite (when `is_multisite()` returns true, which
- * includes defining `MULTISITE` as true or defining `SUNRISE`). Handle `/healthcheck`
- * in `sunrise.php` instead.
+ * This endpoint is disabled on multisite, i.e. when `is_multisite()` returns true
+ * (`MULTISITE` is true, or `SUNRISE` is defined while `MULTISITE` is not defined).
+ * Handle `/healthcheck` in `sunrise.php` instead.
  *
  * `get_option()` may return a value from the object cache, so it does not always verify
  * the current database connection. Use `$wpdb->check_connection(false)` when a live

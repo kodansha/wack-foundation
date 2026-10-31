@@ -1086,7 +1086,7 @@ Provides a lightweight health check endpoint at `/healthcheck` for load balancer
 **Endpoint:** `/healthcheck`
 
 **Behavior:**
-- Single-site only: disabled on multisite (when `is_multisite()` returns `true`, i.e. `MULTISITE` is `true` or `SUNRISE` is defined). Use the `sunrise.php` drop-in described below instead
+- Single-site only: disabled on multisite (when `is_multisite()` returns `true`, i.e. `MULTISITE` is `true`, or `SUNRISE` is defined while `MULTISITE` is not defined). Use the `sunrise.php` drop-in described below instead
 - Handled on the WordPress `parse_request` hook, confirming that PHP and the normal WordPress bootstrap have completed
 - Returns HTTP 200 status code
 - Calls `get_option('blogname')` as a lightweight database read
@@ -1116,7 +1116,7 @@ OK
 
 On multisite, WordPress identifies the current site from the request `Host` header before loading the theme. ALB health checks set the `Host` header to the target's private IP address, which does not match a registered domain, so WordPress redirects the request to the network URL with a `302` response. The request never reaches `parse_request`, and this endpoint cannot return `200`. A mu-plugin cannot work around this either, because mu-plugins are also loaded after WordPress has identified the current site.
 
-- For this reason, this endpoint is automatically disabled on multisite (when `is_multisite()` returns `true`, which includes defining `MULTISITE` as `true` or defining `SUNRISE`). The theme does not register any `/healthcheck` handler in that case.
+- For this reason, this endpoint is automatically disabled on multisite (when `is_multisite()` returns `true`, i.e. `MULTISITE` is `true`, or `SUNRISE` is defined while `MULTISITE` is not defined). The theme does not register any `/healthcheck` handler in that case.
 - For a host-independent health check on multisite, define the `SUNRISE` constant and handle the request in `WP_CONTENT_DIR/sunrise.php`. WordPress loads `sunrise.php` after initializing `$wpdb` but before identifying the current site from the `Host` header, so the drop-in can call `$wpdb->check_connection(false)` and return `200` on success or `503` on failure.
 - Treating `302` as healthy in the ALB configuration does not guarantee that this handler ran, and should not be used as a permanent solution.
 
@@ -1134,7 +1134,7 @@ define('MULTISITE', true);
 define('SUNRISE', true);
 ```
 
-> **Note:** `is_multisite()` returns `true` whenever `SUNRISE` is defined. Define it only when multisite is enabled; otherwise `ms-settings.php` will be loaded on a single-site installation.
+> **Note:** When `MULTISITE` is not defined, `is_multisite()` returns `true` if `SUNRISE` is defined, and WordPress loads `ms-settings.php`. If `MULTISITE` is explicitly defined, its value takes precedence over `SUNRISE`. To avoid unintentionally enabling multisite behavior on a single-site installation, define `SUNRISE` only when multisite is enabled.
 
 2. Place `sunrise.php` directly in `WP_CONTENT_DIR`:
 
