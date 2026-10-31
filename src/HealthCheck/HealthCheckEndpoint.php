@@ -23,9 +23,7 @@ namespace WackFoundation\HealthCheck;
  * the connection succeeds or 503 when it fails.
  *
  * Treating 302 as healthy in the ALB configuration does not guarantee that this
- * handler ran and should not be used as a permanent solution. Use this class on a
- * single-site installation or when the monitoring request uses a Host header that
- * matches a domain registered in WordPress.
+ * handler ran and should not be used as a permanent solution.
  *
  * This endpoint is disabled on multisite (when `is_multisite()` returns true, which
  * includes defining `MULTISITE` as true or defining `SUNRISE`). Handle `/healthcheck`
