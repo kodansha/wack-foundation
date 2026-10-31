@@ -27,6 +27,10 @@ namespace WackFoundation\HealthCheck;
  * single-site installation or when the monitoring request uses a Host header that
  * matches a domain registered in WordPress.
  *
+ * This endpoint is disabled on multisite (when `is_multisite()` returns true, which
+ * includes defining `MULTISITE` as true or defining `SUNRISE`). Handle `/healthcheck`
+ * in `sunrise.php` instead.
+ *
  * `get_option()` may return a value from the object cache, so it does not always verify
  * the current database connection. Use `$wpdb->check_connection(false)` when a live
  * database connectivity check is required.
@@ -37,9 +41,14 @@ class HealthCheckEndpoint
      * Constructor
      *
      * Registers the health check handler to WordPress hooks.
+     * Does nothing on multisite, where `/healthcheck` should be handled in `sunrise.php`.
      */
     public function __construct()
     {
+        if (is_multisite()) {
+            return;
+        }
+
         add_action('parse_request', [$this, 'handleHealthCheck']);
     }
 

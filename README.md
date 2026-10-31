@@ -1086,6 +1086,7 @@ Provides a lightweight health check endpoint at `/healthcheck` for load balancer
 **Endpoint:** `/healthcheck`
 
 **Behavior:**
+- Single-site only: disabled on multisite (when `is_multisite()` returns `true`, i.e. `MULTISITE` is `true` or `SUNRISE` is defined). Use the `sunrise.php` drop-in described below instead
 - Handled on the WordPress `parse_request` hook, confirming that PHP and the normal WordPress bootstrap have completed
 - Returns HTTP 200 status code
 - Calls `get_option('blogname')` as a lightweight database read
@@ -1115,11 +1116,57 @@ OK
 
 On multisite, WordPress identifies the current site from the request `Host` header before loading the theme. ALB health checks set the `Host` header to the target's private IP address, which does not match a registered domain, so WordPress redirects the request to the network URL with a `302` response. The request never reaches `parse_request`, and this endpoint cannot return `200`. A mu-plugin cannot work around this either, because mu-plugins are also loaded after WordPress has identified the current site.
 
-- Use this endpoint on a single-site installation, or when the monitoring request sends a `Host` header that matches a domain registered in WordPress.
+- For this reason, this endpoint is automatically disabled on multisite (when `is_multisite()` returns `true`, which includes defining `MULTISITE` as `true` or defining `SUNRISE`). The theme does not register any `/healthcheck` handler in that case.
 - For a host-independent health check on multisite, define the `SUNRISE` constant and handle the request in `WP_CONTENT_DIR/sunrise.php`. WordPress loads `sunrise.php` after initializing `$wpdb` but before identifying the current site from the `Host` header, so the drop-in can call `$wpdb->check_connection(false)` and return `200` on success or `503` on failure.
 - Treating `302` as healthy in the ALB configuration does not guarantee that this handler ran, and should not be used as a permanent solution.
 
-**No filters available** - The health check endpoint is always available at `/healthcheck`. To disable it, remove the `HealthCheckEndpoint` instantiation from `functions.php`.
+**Sample multisite implementation (`sunrise.php`):**
+
+This theme does not provide `sunrise.php`. It is a WordPress drop-in that must be implemented and deployed by each project, separately from this theme. It requires two changes:
+
+1. Define the `SUNRISE` constant in `wp-config.php` (or `config/application.php` on Bedrock):
+
+```php
+define('MULTISITE', true);
+// ...other multisite constants...
+
+// Load sunrise.php so the health check is handled before multisite identifies the current site.
+define('SUNRISE', true);
+```
+
+> **Note:** `is_multisite()` returns `true` whenever `SUNRISE` is defined. Define it only when multisite is enabled; otherwise `ms-settings.php` will be loaded on a single-site installation.
+
+2. Place `sunrise.php` directly in `WP_CONTENT_DIR`:
+
+- Standard WordPress: `wp-content/sunrise.php`
+- Bedrock: `web/app/sunrise.php`
+
+```php
+<?php
+
+$request_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+
+if ($request_path !== '/healthcheck') {
+    return;
+}
+
+global $wpdb;
+
+// The ALB sends the target's IP address as the Host header, so respond before
+// multisite tries to identify the current site from it.
+$is_healthy = $wpdb instanceof wpdb && $wpdb->check_connection(false);
+
+http_response_code($is_healthy ? 200 : 503);
+header('Content-Type: text/plain; charset=utf-8');
+header('Cache-Control: no-store');
+
+echo $is_healthy ? 'ok' : 'unavailable';
+exit;
+```
+
+On multisite, this theme's endpoint is disabled, so `/healthcheck` is answered only by the drop-in. Any other request returns early from `sunrise.php` and continues through the normal multisite bootstrap.
+
+**No filters available** - On a single-site installation, the health check endpoint is always available at `/healthcheck`. To disable it, remove the `HealthCheckEndpoint` instantiation from `functions.php`.
 
 ---
 
