@@ -715,7 +715,7 @@ add_filter('wack_quick_edit_enabled_post_types', fn($types) => array_merge(
 Hides specific block editor UI controls that cannot be suppressed through standard theme customization or block supports configuration. All adjustments are enabled by default; individual features can be disabled via a single filter.
 
 **Default behavior:**
-- All 7 adjustment groups are active
+- All 8 adjustment groups are active
 
 **Adjustment groups and their feature keys:**
 
@@ -725,6 +725,7 @@ Hides specific block editor UI controls that cannot be suppressed through standa
 | `separator-toolbar` | "Align" button support disabled (hidden as fallback if the JS filter has no effect) |
 | `image-toolbar` | "Align", "Link", "Crop", "Add caption" group in the image block toolbar; "Align" button support disabled |
 | `image-sidebar` | "Settings" panel in the image block sidebar (alt text, aspect ratio, width, height, resolution) |
+| `table-sidebar` | "Fixed width table cells" toggle in the table block sidebar ("Header section" and "Footer section" remain) |
 | `status-visibility` | "Password protection" and "Stick to the top of the blog" in the Status & Visibility popup |
 | `view-options-devices` | Device selection group (Desktop / Tablet / Mobile) in the View Options menu |
 | `preview-button` | Preview dropdown when published; preview dropdown and View/Preview links when private |

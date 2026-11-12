@@ -18,6 +18,7 @@ namespace WackFoundation\Editor;
  * - image-toolbar      : hide "Align", "Link", "Crop", "Add caption" group in toolbar;
  *                        disable "Align" button support
  * - image-sidebar      : hide "Settings" panel (alt text, aspect ratio, width, height…)
+ * - table-sidebar      : hide "Fixed width table cells" toggle in the table block sidebar
  * - status-visibility  : hide "Password protection" and "Stick to the top of the blog"
  * - view-options-devices: hide device selection (Desktop / Tablet / Mobile)
  * - preview-button     : hide preview dropdown and View/Preview links by post status
@@ -50,6 +51,7 @@ class UICustomizationWorkaround
         'separator-toolbar',
         'image-toolbar',
         'image-sidebar',
+        'table-sidebar',
         'status-visibility',
         'view-options-devices',
         'preview-button',
