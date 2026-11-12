@@ -15,6 +15,7 @@
  * - image-toolbar      : hide "Align", "Link", "Crop", "Add caption" group in toolbar;
  *                        disable "Align" support via blocks.registerBlockType filter
  * - image-sidebar      : hide "Settings" panel (alt text, aspect ratio, width, height…)
+ * - table-sidebar      : hide "Fixed width table cells" toggle in the table block sidebar
  * - status-visibility  : hide "Password protection" and "Stick to the top of the blog"
  * - view-options-devices: hide device selection (Desktop / Tablet / Mobile) in View Options
  * - preview-button     : hide preview dropdown and/or View/Preview links by post status
@@ -145,6 +146,34 @@ function applyImageElements(isSelected) {
   }
 }
 
+/**
+ * Mark or unmark the "Fixed width table cells" item in the table block sidebar.
+ *
+ * Core offers no way to remove this toggle. The table block renders it as the
+ * first item of its "Settings" tools panel, followed by the "Header section"
+ * and "Footer section" toggles. The item has no identifying class, so it is
+ * located as the first item right after the panel header (language-independent).
+ *
+ * Also called from the MutationObserver below, because the panel items are
+ * re-rendered when the table changes (e.g. inserting a table from the placeholder).
+ *
+ * Verified on WordPress 7.1.4.
+ *
+ * @param {boolean} isSelected
+ */
+function applyTableSidebar(isSelected) {
+  const fixedLayoutItem = document
+    .querySelector(".block-editor-block-inspector")
+    ?.querySelector(
+      ".components-tools-panel-header + .components-tools-panel-item",
+    );
+
+  // Guard: only the toggle item of the table "Settings" panel is targeted
+  if (!fixedLayoutItem?.querySelector(".components-toggle-control")) return;
+
+  isSelected ? hide(fixedLayoutItem) : show(fixedLayoutItem);
+}
+
 // Subscribe to block selection changes and update toolbar/sidebar marks.
 // Tracked via prevBlockName to avoid redundant DOM work on unrelated store updates.
 // requestAnimationFrame defers DOM queries until React has committed the toolbar.
@@ -168,6 +197,9 @@ wp.data.subscribe(() => {
     }
     if (config["image-toolbar"] || config["image-sidebar"]) {
       applyImageElements(blockName === "core/image");
+    }
+    if (config["table-sidebar"]) {
+      applyTableSidebar(blockName === "core/table");
     }
   });
 });
@@ -214,6 +246,10 @@ function applyDynamicElements() {
         ?.closest(".components-menu-group");
       hide(radioGroup);
     }
+  }
+
+  if (config["table-sidebar"] && prevBlockName === "core/table") {
+    applyTableSidebar(true);
   }
 }
 
